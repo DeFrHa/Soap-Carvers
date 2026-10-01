@@ -49,7 +49,8 @@ namespace SoapCarvers.Core
         [Header("Dynamite")]
         public float dynamiteRadius = 3f;
         public float dynamiteFuse = 3f;
-        public float dynamiteForce = 900f;
+        [Tooltip("Velocity change (m/s) at the blast center; falls off with distance.")]
+        public float dynamiteKnockback = 14f;
         public float dynamiteRespawnSeconds = 10f;
         public int dynamiteMaxLying = 3;
 
