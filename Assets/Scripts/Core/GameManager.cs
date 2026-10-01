@@ -115,6 +115,8 @@ namespace SoapCarvers.Core
             if (scan != null) scan.Stop();
             if (soap != null) soap.ResetSoap();
             if (items != null) items.ResetAll();
+            foreach (var scaffold in FindObjectsByType<Scaffold>(FindObjectsSortMode.None))
+                scaffold.ResetToHome();
             if (playerSpawn != null)
             {
                 foreach (var motor in FindObjectsByType<PlayerMotor>(FindObjectsSortMode.None))

@@ -5,9 +5,9 @@ namespace SoapCarvers.Player
 {
     /// <summary>
     /// CharacterController movement: WASD, Shift sprint, Space jump, a bit floaty
-    /// (low gravity, some air control), pushable by explosions, and ladder
-    /// climbing (overlap a placed ladder, press forward, look up to climb up /
-    /// down to climb down).
+    /// (low gravity, some air control), pushable by explosions, climbing (overlap
+    /// a ClimbZone of a ladder or scaffold, press forward, look up to climb up /
+    /// down to climb down), and shoving IPushables (scaffolds) by walking into them.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class PlayerMotor : MonoBehaviour
@@ -26,6 +26,8 @@ namespace SoapCarvers.Player
         [SerializeField] float climbDownPitch = 35f;  // look this far down to climb down (so you can still walk past)
         [Header("Misc")]
         [SerializeField] float pushPower = 1.5f;
+        [Tooltip("Rigidbodies heavier than this aren't nudged by walking into them.")]
+        [SerializeField] float lightObjectMass = 3f;
         [SerializeField] float impulseDamping = 2.5f;
 
         CharacterController _cc;
@@ -57,21 +59,21 @@ namespace SoapCarvers.Player
             if (wish.sqrMagnitude > 1f) wish.Normalize();
             float speed = walkSpeed * (sprint ? sprintMultiplier : 1f);
 
-            Ladder ladder = FindPlacedLadder();
+            ClimbZone zone = FindClimbZone();
             float pitch = _look != null ? _look.Pitch : 0f;
             bool lookUp = pitch < -climbUpPitch, lookDown = pitch > climbDownPitch;
-            bool wantsClimb = ladder != null && move.y > 0.1f && (lookUp || lookDown);
+            bool wantsClimb = zone != null && move.y > 0.1f && (lookUp || lookDown);
 
             Vector3 motion;
             if (wantsClimb)
             {
                 IsClimbing = true;
-                ladder.NotifyClimbing();
+                zone.NotifyClimbing(transform.position + Vector3.up * 0.9f);
                 float dir = lookUp ? 1f : -1f;
                 // Move along the ladder's rails, so leaning ladders carry you toward the wall.
-                Vector3 climb = ladder.transform.up * (climbSpeed * dir * move.y);
-                // Hop off the top so you can get onto a ledge.
-                if (dir > 0f && transform.position.y > ladder.TopPosition.y - 0.6f)
+                Vector3 climb = zone.Up * (climbSpeed * dir * move.y);
+                // Hop off the top so you can get onto a ledge / scaffold deck.
+                if (dir > 0f && transform.position.y > zone.TopPosition.y - 0.6f)
                     climb += transform.forward * 2.5f + Vector3.up * 1.5f;
                 _verticalVelocity = 0f;
                 _planarVelocity = Vector3.zero;
@@ -104,7 +106,7 @@ namespace SoapCarvers.Player
             if ((flags & CollisionFlags.Above) != 0 && _verticalVelocity > 0f) _verticalVelocity = 0f;
         }
 
-        Ladder FindPlacedLadder()
+        ClimbZone FindClimbZone()
         {
             float r = _cc.radius + 0.15f;
             Vector3 center = transform.position + _cc.center;
@@ -114,8 +116,8 @@ namespace SoapCarvers.Player
             foreach (Collider c in hits)
             {
                 if (!c.isTrigger) continue;
-                Ladder l = c.GetComponentInParent<Ladder>();
-                if (l != null && l.IsPlaced) return l;
+                ClimbZone z = c.GetComponent<ClimbZone>();
+                if (z != null && z.IsClimbable) return z;
             }
             return null;
         }
@@ -142,9 +144,24 @@ namespace SoapCarvers.Player
         void OnControllerColliderHit(ControllerColliderHit hit)
         {
             Rigidbody rb = hit.collider.attachedRigidbody;
-            if (rb == null || rb.isKinematic || hit.moveDirection.y < -0.3f) return;
+            if (rb == null || rb.isKinematic) return;
+            // Standing on it (deck, ladder rung): don't shove what we stand on.
+            if (hit.normal.y > 0.5f || hit.moveDirection.y < -0.3f) return;
             Vector3 push = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
-            rb.AddForce(push * pushPower, ForceMode.VelocityChange);
+            if (push.sqrMagnitude < 1e-4f) return;
+            push.Normalize();
+
+            // Heavy movable things (scaffolds) handle pushing themselves.
+            var pushable = rb.GetComponent<IPushable>();
+            if (pushable != null)
+            {
+                pushable.Push(push);
+                return;
+            }
+            // Light stuff (debris, tools) gets nudged; heavy stuff (ladders) doesn't
+            // budge, otherwise climbing would kick the ladder out from under you.
+            if (rb.mass <= lightObjectMass)
+                rb.AddForce(push * pushPower, ForceMode.VelocityChange);
         }
     }
 }

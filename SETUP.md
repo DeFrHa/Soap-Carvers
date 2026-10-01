@@ -43,7 +43,9 @@ Runtime-only alternative: in any empty scene, add an empty GameObject with
 the **GameBootstrap** component and press Play. It builds everything in code.
 
 To tweak numbers (timer, block/voxel size, tool radii, debris), select
-`Assets/Settings/GameSettings.asset`. Re-running the menu keeps this asset.
+`Assets/Settings/GameSettings.asset`. Re-running the menu keeps this asset,
+so after updating the code, new defaults (for example `voxelSize` 0.125)
+don't apply to an existing asset. Delete it, or edit it, to pick them up.
 To try the easy target, set **Target Shape Name** to `Mushroom`.
 
 ## 3. Controls
@@ -54,13 +56,14 @@ To try the easy target, set **Target Shape Name** to `Mushroom`.
 | Mouse | Look |
 | Shift | Sprint |
 | Space | Jump (also hops off a ladder) |
-| E | Pick up; press the workbench button; place the ladder while carrying it |
+| E | Pick up; press the workbench button; toggle scaffold wheel brakes. While carrying the ladder: place it. While holding dynamite and looking at soap: stick it on |
 | Q | Drop held item |
 | G | Throw held item |
 | LMB | Use tool (hold for knife, chainsaw, pickaxe repeat). Dynamite: light the fuse |
 | RMB or Tab (hold) | Raise the blueprint tablet |
 | 1 / 2 / 3 / 4 | Tablet view: Front / Side / Top / Back (LMB cycles while raised) |
-| Ladder | Walk into a placed ladder holding W. Look up to climb up, look down to climb down |
+| Ladder / scaffold | Walk into the ladder side holding W. Look up to climb up, look down to climb down. At the top you hop off onto the ledge or deck |
+| Scaffold | Look at it and press E to release the brakes, then walk into it to push it. Press E again to lock it before climbing |
 | R | Restart (results screen) |
 | Esc | Free the mouse cursor (click to recapture) |
 
@@ -99,15 +102,26 @@ reference DLLs, but nothing has been run or play-tested yet. Expect to tune:
 - **Feel.** Movement speeds, gravity, jump, mouse sensitivity, the item hold
   poses (`Configure(...)` calls in `SceneBuilder`), the pickaxe swing curve,
   chainsaw jitter, and dynamite knockback (`GameSettings.dynamiteKnockback`).
-- **Ladder.** It is 12 m long (the block is 16 m) and leans 16°. Check the
-  climbing detection (overlap with its trigger colliders), the hop-off at the
-  top, and the awkward carry pose. Reaching the top of the block may need
-  footholds carved with the pickaxe, or a longer ladder.
-- **Performance.** The first frame meshes all 64 chunks and voxelizes the
-  target, which could take a few hundred ms. A dynamite blast (r = 3 m)
-  rebuilds and re-cooks up to ~27 chunk MeshColliders in one frame, so expect
-  a hitch. Options: lower `voxelSize` resolution, a smaller `chunkCells`,
-  spread rebuilds over frames, or Burst/Jobs meshing.
+- **Ladder.** It is a dynamic rigidbody, 12 m long, with grippy rails, and is
+  placed leaning at 16°. If there's nothing to lean on, it falls. Climbers add
+  25 kg at their position (`ClimbZone.climberMass`). Tune friction
+  (`PhysicsMaterials.Grippy`), the lean angle and the mass if it slips or
+  jitters. The scene starts with it leaning against the soap.
+- **Scaffolds.** Three rolling towers (4.5 m, 8.5 m and 12.5 m decks) with
+  sphere "caster" wheels. The wheels are frictionless with brakes off and
+  grippy with brakes on. The center of mass is set very low so they don't
+  tip; dynamite will still launch them. Check the push force and speed
+  (`Scaffold.pushForce`, `maxPushSpeed`), the climb-zone fit and the step-off
+  onto the deck.
+- **Dynamite sticking.** A free stick turns kinematic on its first touch
+  with soap. It checks every 0.25 s whether soap is still under it, and falls
+  if not.
+- **Performance.** At 0.125 m voxels the grid is 129³ points, about 8.6 MB
+  each for the soap and the target, in 512 chunks. Startup meshes every chunk
+  and voxelizes the target (narrow-band, so only near the surface). Expect
+  roughly a second. A dynamite blast dirties about 100 chunks; they rebuild at
+  most `maxChunkRebuildsPerFrame` (24) per frame. If carving feels slow, raise
+  `voxelSize` to 0.16–0.25, or move meshing to Burst/Jobs.
 - **Floating soap.** Islands cut loose from the block stay floating; they
   don't fall.
 - **Materials.** The URP Lit/Unlit properties are set from code. If the scan

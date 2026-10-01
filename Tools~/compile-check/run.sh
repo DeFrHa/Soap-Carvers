@@ -3,7 +3,7 @@
 #
 # It compiles the scripts against Unity 2021.3 reference DLLs from NuGet plus a
 # tiny Input System stub. Unity 6-only APIs are shimmed by text substitution
-# (Rigidbody.linearVelocity -> velocity), so this catches syntax/type/naming
+# (linearVelocity/linearDamping/PhysicsMaterial -> 2021 names), so this catches syntax/type/naming
 # errors but NOT Unity 6 API differences. Unity itself is the real authority.
 #
 # Requirements: dotnet SDK (8+), curl, unzip, network access to api.nuget.org.
@@ -29,7 +29,13 @@ PROJ="$WORK/proj"
 rm -rf "$PROJ" && mkdir -p "$PROJ/src" "$PROJ/stubs"
 cp -r "$REPO/Assets/Scripts/." "$PROJ/src/"
 cp "$HERE/InputSystemStub.cs.txt" "$PROJ/stubs/InputSystemStub.cs"
-find "$PROJ/src" -name "*.cs" -exec sed -i 's/\.linearVelocity/.velocity/g' {} +
+# Unity 6 renames -> 2021.3 names
+find "$PROJ/src" -name "*.cs" -exec sed -i \
+  -e 's/\.linearVelocity/.velocity/g' \
+  -e 's/\.linearDamping/.drag/g' \
+  -e 's/\.angularDamping/.angularDrag/g' \
+  -e 's/PhysicsMaterialCombine/PhysicMaterialCombine/g' \
+  -e 's/PhysicsMaterial\b/PhysicMaterial/g' {} +
 
 {
   echo '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'

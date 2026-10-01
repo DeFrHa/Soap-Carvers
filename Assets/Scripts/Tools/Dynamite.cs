@@ -1,4 +1,5 @@
 using SoapCarvers.Player;
+using SoapCarvers.Soap;
 using UnityEngine;
 
 namespace SoapCarvers.Tools
@@ -7,6 +8,10 @@ namespace SoapCarvers.Tools
     /// LMB lights the fuse, G throws it, and after the fuse it carves a big
     /// sphere, shoves every rigidbody and player nearby, shakes cameras and
     /// throws a huge debris burst. Works whether held, thrown or lying around.
+    ///
+    /// Sticky: when a free stick touches soap it freezes in place (kinematic),
+    /// and E while looking at soap jams it in by hand (Place command). It drops
+    /// off again if the soap it is stuck to gets carved away.
     /// </summary>
     public class Dynamite : Tool
     {
@@ -14,13 +19,21 @@ namespace SoapCarvers.Tools
         [SerializeField] Light sparkLight;
         [SerializeField] Material flashMaterial;
 
+        const float StickCheckInterval = 0.25f;
+        const float StickProbeRadius = 0.25f;
+
         bool _lit;
         bool _exploded;
+        bool _stuck;
+        Vector3 _anchor;          // a point on the soap surface it is stuck to
+        float _nextStickCheck;
         float _fuseLeft;
         int _lastOwnerId = -1;
 
         public bool IsLit => _lit;
         public bool HasExploded => _exploded;
+        public bool IsStuck => _stuck;
+        public override bool CanBePlaced => true;
 
         public override string PickupPrompt => _lit ? "E: Grab the LIT dynamite!" : base.PickupPrompt;
         public override string HeldHint => _lit
@@ -50,12 +63,65 @@ namespace SoapCarvers.Tools
 
         public override void OnAttached(IItemHolder holder)
         {
+            _stuck = false;
             base.OnAttached(holder);
             _lastOwnerId = holder.PlayerId;
         }
 
+        /// <summary>E while looking at soap within reach: jam the stick into the surface.</summary>
+        public override bool TryGetPlacement(IItemHolder holder, out Vector3 position, out Quaternion rotation, out string prompt)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            prompt = null;
+            if (!RaycastSoap(Settings.interactReach, out RaycastHit hit)) return false;
+            // Stick axis (local +Y) along the surface normal, fuse pointing out, half buried.
+            rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+            position = hit.point + hit.normal * 0.04f;
+            prompt = _lit ? "E: Stick it here! (it's lit!)" : "E: Stick dynamite to the soap";
+            return true;
+        }
+
+        public override void PlaceAt(Vector3 position, Quaternion rotation)
+        {
+            base.PlaceAt(position, rotation);
+            StickHere(position);
+        }
+
+        // Thrown/dropped sticks glue themselves to the first soap they touch.
+        void OnCollisionEnter(Collision collision)
+        {
+            if (IsHeld || _stuck || _exploded) return;
+            if (collision.collider.GetComponentInParent<SoapChunk>() == null) return;
+            StickHere(collision.contactCount > 0 ? collision.GetContact(0).point : transform.position);
+        }
+
+        void StickHere(Vector3 surfacePoint)
+        {
+            _stuck = true;
+            _anchor = surfacePoint;
+            _nextStickCheck = Time.time + StickCheckInterval;
+            Body.linearVelocity = Vector3.zero;
+            Body.angularVelocity = Vector3.zero;
+            Body.isKinematic = true;
+        }
+
+        void Unstick()
+        {
+            _stuck = false;
+            Body.isKinematic = false;
+            Body.WakeUp();
+        }
+
         void Update()
         {
+            // Soap under the stick carved away? Fall off.
+            if (_stuck && Time.time >= _nextStickCheck)
+            {
+                _nextStickCheck = Time.time + StickCheckInterval;
+                if (Soap == null || !Soap.IsSolidNear(_anchor, StickProbeRadius)) Unstick();
+            }
+
             if (!_lit || _exploded) return;
             _fuseLeft -= Time.deltaTime;
             if (sparkVisual != null)
@@ -108,6 +174,7 @@ namespace SoapCarvers.Tools
 
         public override void ResetToHome()
         {
+            _stuck = false;
             base.ResetToHome();
             _lit = false;
             _exploded = false;
