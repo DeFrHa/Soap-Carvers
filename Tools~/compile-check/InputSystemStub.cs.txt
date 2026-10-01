@@ -1,0 +1,25 @@
+// Minimal stub of the Input System API used by Soap Carvers. Compile-check only; NOT shipped.
+// (.txt extension so Unity never compiles it inside the real project.)
+// Minimal stub of the Input System API surface used by the project (compile check only).
+namespace UnityEngine.InputSystem
+{
+    public enum InputActionType { Value, Button, PassThrough }
+    public class InputAction : System.IDisposable
+    {
+        public InputAction(string name = null, InputActionType type = InputActionType.Value, string binding = null, string interactions = null, string processors = null, string expectedControlType = null) { }
+        public CompositeSyntax AddCompositeBinding(string composite, string interactions = null, string processors = null) => default;
+        public BindingSyntax AddBinding(string path, string interactions = null, string processors = null, string groups = null) => default;
+        public TValue ReadValue<TValue>() where TValue : struct => default;
+        public bool WasPressedThisFrame() => false;
+        public bool IsPressed() => false;
+        public void Enable() { }
+        public void Disable() { }
+        public void Dispose() { }
+        public struct CompositeSyntax { public CompositeSyntax With(string name, string binding, string groups = null, string processors = null) => this; }
+        public struct BindingSyntax { }
+    }
+}
+namespace UnityEngine.InputSystem.UI
+{
+    public class InputSystemUIInputModule : UnityEngine.EventSystems.BaseInputModule { public override void Process() { } public void AssignDefaultActions() { } }
+}
