@@ -4,8 +4,8 @@ using UnityEngine;
 namespace SoapCarvers.Tools
 {
     /// <summary>
-    /// Authority for who holds which item. Every pick up / drop / throw / ladder
-    /// placement goes through <see cref="Execute"/> as an <see cref="ItemCommand"/>
+    /// Authority for who holds which item. Every pick up / drop / throw / place
+    /// goes through <see cref="Execute"/> as an <see cref="ItemCommand"/>
     /// and is logged. Items and holders register themselves by id.
     /// </summary>
     public class ItemManager : MonoBehaviour
@@ -59,10 +59,10 @@ namespace SoapCarvers.Tools
                     Release(holder, cmd.Velocity);
                     break;
 
-                case ItemCommandType.PlaceLadder:
-                    if (item.Holder != holder || !(item is Ladder ladder)) return false;
+                case ItemCommandType.Place:
+                    if (item.Holder != holder || !item.CanBePlaced) return false;
                     Release(holder, Vector3.zero);
-                    ladder.Place(cmd.Position, cmd.Rotation);
+                    item.PlaceAt(cmd.Position, cmd.Rotation);
                     break;
 
                 default:

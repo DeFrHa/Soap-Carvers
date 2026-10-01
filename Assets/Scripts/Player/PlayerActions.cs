@@ -8,7 +8,7 @@ namespace SoapCarvers.Player
     /// <summary>
     /// Turns input into actions. Looks at what the crosshair hits, builds the
     /// interaction prompt, and sends ItemCommands to the ItemManager (pick up,
-    /// drop, throw, place ladder) or forwards use to the held Tool.
+    /// drop, throw, place) or forwards use to the held Tool.
     /// Implements IItemHolder: this player's hand.
     /// </summary>
     [RequireComponent(typeof(PlayerInputHandler))]
@@ -94,8 +94,14 @@ namespace SoapCarvers.Player
                 if (lookItem == null) lookInteractable = hit.collider.GetComponentInParent<IInteractable>();
             }
 
-            var ladder = HeldItem as Ladder;
-            if (ladder != null) CurrentPrompt = "E: Place ladder";
+            // Placement (lean the ladder, stick dynamite on soap) wins over picking things up.
+            Vector3 placePos = default;
+            Quaternion placeRot = Quaternion.identity;
+            string placePrompt = null;
+            bool canPlace = HeldItem != null && HeldItem.CanBePlaced &&
+                            HeldItem.TryGetPlacement(this, out placePos, out placeRot, out placePrompt);
+
+            if (canPlace) CurrentPrompt = placePrompt;
             else if (lookItem != null) CurrentPrompt = lookItem.PickupPrompt;
             else if (lookInteractable != null) CurrentPrompt = lookInteractable.GetPrompt(this);
             else CurrentPrompt = null;
@@ -103,7 +109,7 @@ namespace SoapCarvers.Player
             // ---- E: interact ----
             if (_input.InteractPressed && items != null)
             {
-                if (ladder != null) PlaceLadder(ladder);
+                if (canPlace) Place(HeldItem, placePos, placeRot);
                 else if (lookItem != null) Send(ItemCommandType.PickUp, lookItem);
                 else if (lookInteractable != null) lookInteractable.Interact(this);
             }
@@ -136,12 +142,11 @@ namespace SoapCarvers.Player
                 game.RequestRestart();
         }
 
-        void PlaceLadder(Ladder ladder)
+        void Place(Holdable item, Vector3 pos, Quaternion rot)
         {
-            ladder.ComputePlacement(aim, transform.position, transform, out Vector3 pos, out Quaternion rot);
             items.Execute(new ItemCommand
             {
-                Type = ItemCommandType.PlaceLadder, PlayerId = playerId, ItemId = ladder.ItemId,
+                Type = ItemCommandType.Place, PlayerId = playerId, ItemId = item.ItemId,
                 Position = pos, Rotation = rot,
             });
         }

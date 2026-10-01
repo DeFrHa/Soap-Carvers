@@ -124,7 +124,7 @@ namespace SoapCarvers.Core
                 Mat("LeavesPink", new Color(0.98f, 0.62f, 0.75f)),
                 Mat("LeavesTeal", new Color(0.3f, 0.7f, 0.6f)),
             };
-            _soapMat = Mat("Soap", _settings.soapColor, _settings.soapSmoothness);
+            _soapMat = Persist(SoapBlock.CreateSoapMaterial(_settings), "Materials/Soap.mat");
             _spark = Persist(MaterialFactory.Emissive("Spark", new Color(1f, 0.9f, 0.4f), new Color(3f, 2.2f, 0.6f)), "Materials/Spark.mat");
             _flash = Persist(MaterialFactory.Emissive("ExplosionFlash", new Color(1f, 0.6f, 0.2f), new Color(4f, 2f, 0.5f)), "Materials/ExplosionFlash.mat");
             _buttonRed = Persist(MaterialFactory.Emissive("ButtonRed", new Color(1f, 0.15f, 0.12f), new Color(0.6f, 0.05f, 0.03f)), "Materials/ButtonRed.mat");
@@ -318,8 +318,17 @@ namespace SoapCarvers.Core
             bench.AddComponent<DynamiteSpawner>().Configure(template, spawnPoint.transform,
                 _settings.dynamiteRespawnSeconds, _settings.dynamiteMaxLying);
 
-            // Ladder standing next to the bench, leaning slightly toward the block.
-            BuildLadder(BenchCenter + new Vector3(-2.6f, 0f, 0.6f), Quaternion.Euler(6f, 0f, 0f));
+            // Ladder leaning against the soap's front face, right of the spawn.
+            // Base is set back so the top just rests on the face (physics keeps it there).
+            const float ladderLength = 12f, ladderLean = 16f;
+            float face = -(_settings.blockSize * 0.5f - _settings.voxelSize * 0.5f);
+            float setBack = ladderLength * Mathf.Sin(ladderLean * Mathf.Deg2Rad) + 0.05f;
+            BuildLadder(new Vector3(3f, 0.02f, face - setBack), Quaternion.Euler(ladderLean, 0f, 0f), ladderLength, ladderLean);
+
+            // Rolling scaffold towers to the right of the spawn, brakes on.
+            BuildScaffold("Scaffold_Low", new Vector3(6.5f, 0f, -12f), 4.5f);
+            BuildScaffold("Scaffold_Mid", new Vector3(9.5f, 0f, -12f), 8.5f);
+            BuildScaffold("Scaffold_High", new Vector3(12.5f, 0f, -12f), 12.5f);
             return b;
         }
 
@@ -420,18 +429,107 @@ namespace SoapCarvers.Core
             tablet.SetParts(_studio, screen.GetComponent<MeshRenderer>(), title, timer, view);
         }
 
-        void BuildLadder(Vector3 pos, Quaternion rot)
+        void BuildLadder(Vector3 pos, Quaternion rot, float length, float lean)
         {
-            const float length = 12f;
-            var ladder = ItemRoot<Ladder>("Ladder", pos, rot, 10f, out Transform m);
-            ladder.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Discrete;
+            var ladder = ItemRoot<Ladder>("Ladder", pos, rot, 15f, out Transform m);
+            Rigidbody rb = ladder.GetComponent<Rigidbody>();
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            // Only the rails collide (simple, stable contacts); rungs are visual.
             for (int s = -1; s <= 1; s += 2)
                 Prim(PrimitiveType.Cube, "Rail", m, new Vector3(s * 0.28f, length * 0.5f, 0f), new Vector3(0.07f, length, 0.07f), _yellow);
             for (float h = 0.3f; h < length - 0.1f; h += 0.35f)
-                Prim(PrimitiveType.Cube, "Rung", m, new Vector3(0f, h, 0f), new Vector3(0.56f, 0.045f, 0.045f), _wood);
+                Prim(PrimitiveType.Cube, "Rung", m, new Vector3(0f, h, 0f), new Vector3(0.56f, 0.045f, 0.045f), _wood, false);
+            AddClimbZone(m, new Vector3(0f, length * 0.5f, -0.4f), new Vector3(0.75f, length, 0.6f), length, rb);
             // Carried awkwardly: mostly horizontal, sticking out ahead, low on the right.
             ladder.Configure(_nextItemId++, "Ladder", new Vector3(0.45f, -0.75f, 0.2f), new Vector3(72f, 6f, 0f));
-            ladder.SetDimensions(length, 16f, true);
+            ladder.SetDimensions(length, lean);
+        }
+
+        void AddClimbZone(Transform parent, Vector3 center, Vector3 size, float topY, Rigidbody body)
+        {
+            GameObject zoneGo = Node("ClimbZone", parent, Vector3.zero);
+            var box = zoneGo.AddComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.center = center;
+            box.size = size;
+            zoneGo.AddComponent<ClimbZone>().Configure(topY, body);
+        }
+
+        /// <summary>
+        /// Rolling scaffold tower (pivot = ground center): caster wheels, orange
+        /// frame with braces, plank deck at <paramref name="height"/>, guard rails
+        /// on three sides and a ladder on the open -Z side.
+        /// </summary>
+        void BuildScaffold(string name, Vector3 pos, float height)
+        {
+            const float w = 2.4f;          // footprint
+            const float hw = w * 0.5f;
+            const float frameBottom = 0.3f; // wheels below this
+            const float bar = 0.07f;
+            float top = height + 1.05f;    // top guard rail
+
+            GameObject go = Node(name, _root, pos);
+            Transform t = go.transform;
+            var rb = go.AddComponent<Rigidbody>();
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+
+            // Wheels (sphere colliders: caster stand-ins).
+            var wheels = new Collider[4];
+            int wi = 0;
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+                wheels[wi++] = Prim(PrimitiveType.Sphere, "Wheel", t, new Vector3(sx * (hw - 0.1f), 0.15f, sz * (hw - 0.1f)),
+                    Vector3.one * 0.3f, _black).GetComponent<Collider>();
+
+            // Corner posts.
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+                Prim(PrimitiveType.Cube, "Post", t, new Vector3(sx * hw, (frameBottom + top) * 0.5f, sz * hw),
+                    new Vector3(bar, top - frameBottom, bar), _orange);
+
+            // Horizontal rings every 2 m, plus X-side diagonals per level.
+            for (float y = frameBottom + 0.05f; y < height - 0.2f; y += 2f)
+            {
+                Ring(t, y, hw, bar, true);
+                float levelTop = Mathf.Min(y + 2f, height);
+                float rise = levelTop - y;
+                float diag = Mathf.Sqrt(rise * rise + w * w);
+                float angle = Mathf.Atan2(rise, w) * Mathf.Rad2Deg;
+                for (int sx = -1; sx <= 1; sx += 2)
+                    Prim(PrimitiveType.Cube, "Diagonal", t, new Vector3(sx * hw, y + rise * 0.5f, 0f),
+                        new Vector3(bar * 0.8f, bar * 0.8f, diag), _orange, true, new Vector3(-angle, 0f, 0f));
+            }
+
+            // Deck and guard rails (no rail on the ladder side, so you can step off).
+            Prim(PrimitiveType.Cube, "Deck", t, new Vector3(0f, height - 0.05f, 0f), new Vector3(w, 0.1f, w), _wood);
+            foreach (float y in new[] { height + 0.5f, top })
+            {
+                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(-hw, y, 0f), new Vector3(bar, bar, w), _orange);
+                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(hw, y, 0f), new Vector3(bar, bar, w), _orange);
+                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(0f, y, hw), new Vector3(w, bar, bar), _orange);
+            }
+
+            // Built-in ladder on the -Z face, ending at deck height.
+            float ladderZ = -hw - 0.08f;
+            for (int sx = -1; sx <= 1; sx += 2)
+                Prim(PrimitiveType.Cube, "LadderRail", t, new Vector3(sx * 0.25f, (frameBottom + height) * 0.5f, ladderZ),
+                    new Vector3(0.05f, height - frameBottom, 0.05f), _yellow);
+            for (float y = frameBottom + 0.3f; y < height; y += 0.3f)
+                Prim(PrimitiveType.Cube, "LadderRung", t, new Vector3(0f, y, ladderZ), new Vector3(0.5f, 0.04f, 0.04f), _yellow, false);
+            AddClimbZone(t, new Vector3(0f, (frameBottom + height) * 0.5f + 0.15f, -hw - 0.45f),
+                new Vector3(0.9f, height - frameBottom + 0.3f, 0.7f), height + 0.15f, rb);
+
+            go.AddComponent<Scaffold>().Configure(wheels, 60f + 8f * height);
+        }
+
+        /// <summary>Four horizontal bars around the tower at height y.</summary>
+        void Ring(Transform t, float y, float hw, float bar, bool withFront)
+        {
+            float w = hw * 2f;
+            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(-hw, y, 0f), new Vector3(bar, bar, w), _orange);
+            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(hw, y, 0f), new Vector3(bar, bar, w), _orange);
+            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(0f, y, hw), new Vector3(w, bar, bar), _orange);
+            if (withFront) Prim(PrimitiveType.Cube, "Brace", t, new Vector3(0f, y, -hw), new Vector3(w, bar, bar), _orange);
         }
 
         // =============================================================== player

@@ -28,6 +28,8 @@ namespace SoapCarvers.Tools
         public virtual string PickupPrompt => $"E: Pick up {displayName}";
         /// <summary>Control hint shown on the HUD while held.</summary>
         public virtual string HeldHint => "Q: Drop   G: Throw";
+        /// <summary>Whether this item supports the Place command at all.</summary>
+        public virtual bool CanBePlaced => false;
 
         protected Rigidbody Body { get; private set; }
         protected ItemManager Manager { get; private set; }
@@ -86,6 +88,32 @@ namespace SoapCarvers.Tools
             Body.interpolation = RigidbodyInterpolation.Interpolate;
             Body.linearVelocity = velocity;
             Body.angularVelocity = velocity.sqrMagnitude > 4f ? Random.insideUnitSphere * 6f : Vector3.zero;
+        }
+
+        /// <summary>
+        /// Where E would put this item right now (holder's view), or false if it
+        /// can't be placed here. The pose travels in a Place ItemCommand.
+        /// </summary>
+        public virtual bool TryGetPlacement(IItemHolder holder, out Vector3 position, out Quaternion rotation, out string prompt)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            prompt = null;
+            return false;
+        }
+
+        /// <summary>Called by ItemManager for a Place command, after the item was released.</summary>
+        public virtual void PlaceAt(Vector3 position, Quaternion rotation)
+        {
+            transform.SetPositionAndRotation(position, rotation);
+            Body.position = position;
+            Body.rotation = rotation;
+            if (!Body.isKinematic)
+            {
+                Body.linearVelocity = Vector3.zero;
+                Body.angularVelocity = Vector3.zero;
+            }
+            Body.WakeUp();
         }
 
         protected virtual void GetHoldPose(out Vector3 localPosition, out Quaternion localRotation)

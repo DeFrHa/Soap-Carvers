@@ -15,8 +15,8 @@ namespace SoapCarvers.Soap
         [SerializeField] int maxActive = 150;
         [SerializeField] float lifetime = 8f;
         [SerializeField] float shrinkSeconds = 1.2f;
-        [Tooltip("Removed grid points per spawned chip (lower = more chips).")]
-        [SerializeField] float pointsPerChip = 6f;
+        [Tooltip("Removed soap volume (m^3) per spawned chip (lower = more chips). Independent of voxel size.")]
+        [SerializeField] float volumePerChip = 0.09f;
         [SerializeField] int maxChipsPerCarve = 10;
 
         SoapBlock _block;
@@ -72,7 +72,9 @@ namespace SoapCarvers.Soap
         void OnCarveApplied(SoapCarveCommand cmd, int removedPoints)
         {
             if (removedPoints <= 0 || cmd.DebrisScale <= 0f) return;
-            int count = Mathf.Clamp(Mathf.CeilToInt(removedPoints / pointsPerChip * cmd.DebrisScale), 1,
+            float vs = _block.Grid.VoxelSize;
+            float removedVolume = removedPoints * vs * vs * vs;
+            int count = Mathf.Clamp(Mathf.CeilToInt(removedVolume / volumePerChip * cmd.DebrisScale), 1,
                 Mathf.CeilToInt(maxChipsPerCarve * Mathf.Max(1f, cmd.DebrisScale)));
             Vector3 worldCenter = transform.TransformPoint((cmd.LocalA + cmd.LocalB) * 0.5f);
             for (int i = 0; i < count; i++)

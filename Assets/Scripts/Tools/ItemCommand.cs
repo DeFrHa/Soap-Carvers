@@ -7,7 +7,8 @@ namespace SoapCarvers.Tools
         PickUp = 0,
         Drop = 1,
         Throw = 2,
-        PlaceLadder = 3,
+        /// <summary>Put the held item at a given pose (lean a ladder, stick dynamite on soap).</summary>
+        Place = 3,
     }
 
     /// <summary>
@@ -21,9 +22,9 @@ namespace SoapCarvers.Tools
         public ItemCommandType Type;
         public int PlayerId;
         public int ItemId;
-        /// <summary>PlaceLadder: base position (world).</summary>
+        /// <summary>Place: target position (world).</summary>
         public Vector3 Position;
-        /// <summary>PlaceLadder: rotation (world).</summary>
+        /// <summary>Place: target rotation (world).</summary>
         public Quaternion Rotation;
         /// <summary>Drop/Throw: initial velocity of the released item.</summary>
         public Vector3 Velocity;

@@ -8,12 +8,17 @@ namespace SoapCarvers.Soap
     ///   density &gt; 0  : solid
     ///   density &lt;= 0 : empty
     /// Values are clamped signed distances measured in voxel units
-    /// (density = clamp(-sdf / voxelSize, -1, 1)), which keeps marching cubes
-    /// interpolation smooth while staying cheap to store and to carve.
+    /// (density = clamp(-sdf / voxelSize, -MaxDensity, MaxDensity)), which keeps
+    /// marching cubes interpolation smooth while staying cheap to store and carve.
+    /// The ±2 voxel band (rather than ±1) keeps the central-difference gradient
+    /// meaningful at every corner of a surface cell, which smooth normals need.
     /// Coordinates are in the owner's LOCAL space.
     /// </summary>
     public class VoxelGrid
     {
+        /// <summary>Densities are clamped to [-MaxDensity, MaxDensity] voxel units.</summary>
+        public const float MaxDensity = 2f;
+
         public readonly int Cells;          // cells per axis
         public readonly int Points;         // points per axis = Cells + 1
         public readonly float VoxelSize;
@@ -43,13 +48,29 @@ namespace SoapCarvers.Soap
 
         public bool IsSolid(int index) => Density[index] > 0f;
 
+        /// <summary>
+        /// Unnormalized density gradient at a grid point (central differences,
+        /// one-sided at the borders). Points INTO the solid; the outward surface
+        /// normal is its negation.
+        /// </summary>
+        public Vector3 Gradient(int x, int y, int z)
+        {
+            int x0 = x > 0 ? x - 1 : x, x1 = x < Points - 1 ? x + 1 : x;
+            int y0 = y > 0 ? y - 1 : y, y1 = y < Points - 1 ? y + 1 : y;
+            int z0 = z > 0 ? z - 1 : z, z1 = z < Points - 1 ? z + 1 : z;
+            return new Vector3(
+                (Get(x1, y, z) - Get(x0, y, z)) / (x1 - x0),
+                (Get(x, y1, z) - Get(x, y0, z)) / (y1 - y0),
+                (Get(x, y, z1) - Get(x, y, z0)) / (z1 - z0));
+        }
+
         public void CopyFrom(VoxelGrid other)
         {
             System.Array.Copy(other.Density, Density, Density.Length);
         }
 
         /// <summary>Converts a signed distance in meters to stored density.</summary>
-        public float DensityFromSdf(float sdfMeters) => Mathf.Clamp(-sdfMeters / VoxelSize, -1f, 1f);
+        public float DensityFromSdf(float sdfMeters) => Mathf.Clamp(-sdfMeters / VoxelSize, -MaxDensity, MaxDensity);
 
         /// <summary>
         /// Clamps a local-space AABB to point index ranges. Returns false if empty.
