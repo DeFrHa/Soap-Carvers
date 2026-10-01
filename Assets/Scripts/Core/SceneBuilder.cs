@@ -400,9 +400,14 @@ namespace SoapCarvers.Core
             GameObject canvasGo = Node("ScreenCanvas", m, new Vector3(0f, 0f, -0.018f));
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
+            // Adding a Canvas swaps Transform for RectTransform; re-apply the pose to be safe.
             var rt = canvasGo.GetComponent<RectTransform>();
             rt.sizeDelta = new Vector2(460f, 320f);
-            canvasGo.transform.localScale = Vector3.one * 0.001f;
+            rt.localPosition = new Vector3(0f, 0f, -0.018f);
+            rt.localRotation = Quaternion.identity;
+            rt.localScale = Vector3.one * 0.001f;
+            // Rasterize glyphs at 3x so the small world-space text isn't blurry up close.
+            canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 3f;
 
             Text title = MakeText(canvasGo.transform, "Title", 24, TextAnchor.UpperLeft, FontStyle.Bold,
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -36f), new Vector2(-16f, 0f), new Vector2(8f, 0f));
