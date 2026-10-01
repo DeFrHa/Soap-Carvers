@@ -5,6 +5,12 @@ Players carve a giant bar of soap into a target shape (v1: a swan) against
 the clock. It is single-player for now but built so a network layer
 (Netcode for GameObjects or FishNet) can be added later.
 
+## Project owner notes
+
+- Unity version: 6000.3.6f1, 3D, URP, new Input System.
+- Put all scripts in `Assets/Scripts`.
+- Commit directly to `main`.
+
 ## Tech
 
 - **Unity 6000.3.6f1**, **URP**, **new Input System** (actions are built in
