@@ -47,6 +47,7 @@ namespace SoapCarvers.Soap
             // Grab Unity's built-in cube mesh once.
             var tmp = GameObject.CreatePrimitive(PrimitiveType.Cube);
             _cubeMesh = tmp.GetComponent<MeshFilter>().sharedMesh;
+            tmp.SetActive(false);
             Destroy(tmp);
         }
 

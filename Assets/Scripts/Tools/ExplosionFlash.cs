@@ -16,7 +16,7 @@ namespace SoapCarvers.Tools
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "ExplosionFlash";
-            Destroy(go.GetComponent<Collider>());
+            DestroyImmediate(go.GetComponent<Collider>());
             go.transform.position = position;
             var mr = go.GetComponent<MeshRenderer>();
             mr.sharedMaterial = material != null

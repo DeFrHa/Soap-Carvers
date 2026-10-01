@@ -134,7 +134,7 @@ namespace SoapCarvers.Targets
                 else if (axis == 1) { pos = new Vector3(a * h, 0, b * h); scale = new Vector3(t, _extent, t); }
                 else { pos = new Vector3(a * h, b * h, 0); scale = new Vector3(t, t, _extent); }
                 var edge = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                Destroy(edge.GetComponent<Collider>());
+                DestroyImmediate(edge.GetComponent<Collider>());
                 edge.name = "Edge";
                 edge.layer = _layer;
                 edge.transform.SetParent(root, false);
