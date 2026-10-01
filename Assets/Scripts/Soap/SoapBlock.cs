@@ -45,10 +45,12 @@ namespace SoapCarvers.Soap
 
         readonly List<SoapCarveCommand> _log = new List<SoapCarveCommand>(1024);
         readonly HashSet<int> _dirtyChunks = new HashSet<int>();
+        readonly List<int> _rebuildBatch = new List<int>(64);
         readonly MarchingCubesMesher _mesher = new MarchingCubesMesher();
         Chunk[] _chunks;
         int _chunkCells;
         int _chunksPerAxis;
+        float _edgeRadius;
 
         class Chunk
         {
@@ -73,8 +75,8 @@ namespace SoapCarvers.Soap
         {
             if (Grid != null) return;
             if (settings == null) settings = GameSettings.CreateDefault();
-            if (soapMaterial == null)
-                soapMaterial = MaterialFactory.Lit("Soap", settings.soapColor, settings.soapSmoothness);
+            if (soapMaterial == null) soapMaterial = CreateSoapMaterial(settings);
+            _mesher.SmoothShading = settings.smoothShading;
 
             int cells = settings.CellsPerAxis;
             float vs = settings.blockSize / cells;
@@ -85,12 +87,22 @@ namespace SoapCarvers.Soap
             // so the outermost layer of points is "air" and the mesh is closed.
             BoxHalfExtent = half - vs * 0.5f;
             BoxCenter = Grid.Center;
+            _edgeRadius = Mathf.Clamp(settings.soapEdgeRadius, 0f, BoxHalfExtent * 0.5f);
 
             _chunkCells = Mathf.Max(1, settings.chunkCells);
             _chunksPerAxis = Mathf.CeilToInt(cells / (float)_chunkCells);
             CreateChunks();
             FillUntouched();
-            MarkAllDirty();
+            RebuildAllNow();
+        }
+
+        /// <summary>
+        /// Soap look: pastel, glossy, with a faint emission so shadowed sides
+        /// still feel slightly translucent (cheap fake subsurface scattering).
+        /// </summary>
+        public static Material CreateSoapMaterial(GameSettings s)
+        {
+            return MaterialFactory.Emissive("Soap", s.soapColor, s.soapColor * s.soapGlow, s.soapSmoothness);
         }
 
         // ------------------------------------------------------------------ API
@@ -131,7 +143,7 @@ namespace SoapCarvers.Soap
             EnsureInitialized();
             _log.Clear();
             FillUntouched();
-            MarkAllDirty();
+            RebuildAllNow();
             SoapReset?.Invoke();
         }
 
@@ -151,18 +163,42 @@ namespace SoapCarvers.Soap
                 cmd.Sequence = _log.Count;
                 _log.Add(cmd);
             }
-            MarkAllDirty();
+            RebuildAllNow();
+        }
+
+        /// <summary>
+        /// True if any solid grid point lies within <paramref name="radius"/> of a
+        /// world position. Read-only query (e.g. "is the dynamite still stuck to soap?").
+        /// </summary>
+        public bool IsSolidNear(Vector3 worldPos, float radius)
+        {
+            EnsureInitialized();
+            Vector3 p = transform.InverseTransformPoint(worldPos);
+            Vector3 r = Vector3.one * radius;
+            if (!Grid.PointRange(p - r, p + r, out Vector3Int lo, out Vector3Int hi)) return false;
+            float r2 = radius * radius;
+            for (int z = lo.z; z <= hi.z; z++)
+            for (int y = lo.y; y <= hi.y; y++)
+            for (int x = lo.x; x <= hi.x; x++)
+            {
+                if (Grid.Density[Grid.Index(x, y, z)] <= 0f) continue;
+                if ((Grid.PointPosition(x, y, z) - p).sqrMagnitude <= r2) return true;
+            }
+            return false;
         }
 
         /// <summary>Density of the untouched block at a grid point (used by scoring).</summary>
         public float UntouchedDensity(int x, int y, int z)
         {
             Vector3 p = Grid.PointPosition(x, y, z) - BoxCenter;
-            // Signed distance to an axis-aligned box (negative inside).
-            Vector3 q = new Vector3(Mathf.Abs(p.x), Mathf.Abs(p.y), Mathf.Abs(p.z)) - Vector3.one * BoxHalfExtent;
+            // Signed distance to a ROUNDED box (negative inside): shrink the box by
+            // the edge radius, take the plain box distance, then subtract the radius.
+            // That rounds every edge and corner like a real bar of soap.
+            Vector3 q = new Vector3(Mathf.Abs(p.x), Mathf.Abs(p.y), Mathf.Abs(p.z))
+                        - Vector3.one * (BoxHalfExtent - _edgeRadius);
             float outside = Vector3.Max(q, Vector3.zero).magnitude;
             float inside = Mathf.Min(Mathf.Max(q.x, Mathf.Max(q.y, q.z)), 0f);
-            return Grid.DensityFromSdf(outside + inside);
+            return Grid.DensityFromSdf(outside + inside - _edgeRadius);
         }
 
         public Vector3 WorldCenter => transform.TransformPoint(BoxCenter);
@@ -179,7 +215,8 @@ namespace SoapCarvers.Soap
             if (cmd.Radius <= 0f) return false;
 
             cmd.Bounds(out Vector3 min, out Vector3 max);
-            Vector3 pad = Vector3.one * Grid.VoxelSize; // density ramps over one voxel
+            // Density ramps over MaxDensity voxels around the surface.
+            Vector3 pad = Vector3.one * (Grid.VoxelSize * VoxelGrid.MaxDensity);
             if (!Grid.PointRange(min - pad, max + pad, out Vector3Int lo, out Vector3Int hi)) return false;
 
             float[] d = Grid.Density;
@@ -190,8 +227,9 @@ namespace SoapCarvers.Soap
             {
                 int i = Grid.Index(x, y, z);
                 float old = d[i];
-                if (old <= -1f) continue; // already fully empty
-                float keep = Mathf.Clamp(cmd.Sdf(Grid.PointPosition(x, y, z)) / Grid.VoxelSize, -1f, 1f);
+                if (old <= -VoxelGrid.MaxDensity) continue; // already fully empty
+                float keep = Mathf.Clamp(cmd.Sdf(Grid.PointPosition(x, y, z)) / Grid.VoxelSize,
+                    -VoxelGrid.MaxDensity, VoxelGrid.MaxDensity);
                 if (keep >= old) continue;
                 d[i] = keep;
                 changed = true;
@@ -240,18 +278,23 @@ namespace SoapCarvers.Soap
 
         int ChunkIndex(int x, int y, int z) => x + _chunksPerAxis * (y + _chunksPerAxis * z);
 
-        void MarkAllDirty()
+        void RebuildAllNow()
         {
-            for (int i = 0; i < _chunks.Length; i++) _dirtyChunks.Add(i);
+            for (int i = 0; i < _chunks.Length; i++) RebuildChunk(_chunks[i]);
+            _dirtyChunks.Clear();
         }
 
         /// <summary>
         /// A chunk with cells [c*K, c*K+K) reads points [c*K, c*K+K]. A modified
         /// point p therefore affects chunk floor(p/K) and, when it sits on a chunk
         /// border, also chunk floor((p-1)/K). That is the "include neighbors" rule.
+        /// Smooth normals read one point further (central differences), so the
+        /// modified range is widened by one point on each side first.
         /// </summary>
         void MarkDirtyPoints(Vector3Int lo, Vector3Int hi)
         {
+            lo -= Vector3Int.one;
+            hi += Vector3Int.one;
             int last = _chunksPerAxis - 1;
             int x0 = Mathf.Clamp(Mathf.FloorToInt((lo.x - 1) / (float)_chunkCells), 0, last);
             int y0 = Mathf.Clamp(Mathf.FloorToInt((lo.y - 1) / (float)_chunkCells), 0, last);
@@ -266,11 +309,22 @@ namespace SoapCarvers.Soap
         }
 
         // Rebuild dirty chunks at most once per frame, after all carves of the frame.
+        // A per-frame budget spreads big blasts (dynamite) over a few frames.
         void LateUpdate()
         {
             if (_dirtyChunks.Count == 0) return;
-            foreach (int i in _dirtyChunks) RebuildChunk(_chunks[i]);
-            _dirtyChunks.Clear();
+            int budget = Mathf.Max(1, settings.maxChunkRebuildsPerFrame);
+            _rebuildBatch.Clear();
+            foreach (int i in _dirtyChunks)
+            {
+                _rebuildBatch.Add(i);
+                if (_rebuildBatch.Count >= budget) break;
+            }
+            foreach (int i in _rebuildBatch)
+            {
+                RebuildChunk(_chunks[i]);
+                _dirtyChunks.Remove(i);
+            }
         }
 
         void RebuildChunk(Chunk chunk)

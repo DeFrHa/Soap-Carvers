@@ -21,12 +21,20 @@ namespace SoapCarvers.Core
         [Header("Soap block")]
         [Tooltip("Edge length of the cubic soap block in meters.")]
         public float blockSize = 16f;
-        [Tooltip("Edge length of one voxel cell in meters.")]
-        public float voxelSize = 0.25f;
+        [Tooltip("Edge length of one voxel cell in meters. Smaller = cleaner carving, more CPU/memory (cost ~ 1/size^3).")]
+        public float voxelSize = 0.125f;
         [Tooltip("Cells per chunk edge. Each chunk is one mesh + collider.")]
         public int chunkCells = 16;
-        public Color soapColor = new Color(1f, 0.78f, 0.86f);
-        [Range(0f, 1f)] public float soapSmoothness = 0.65f;
+        [Tooltip("Max chunk meshes (and colliders) rebuilt per frame; the rest wait a frame. Spreads big blasts out.")]
+        public int maxChunkRebuildsPerFrame = 24;
+        [Tooltip("Smooth (gradient) normals. Off = faceted low-poly look.")]
+        public bool smoothShading = true;
+        [Tooltip("Rounded edge radius of the untouched bar of soap, in meters.")]
+        public float soapEdgeRadius = 0.5f;
+        public Color soapColor = new Color(1f, 0.8f, 0.88f);
+        [Range(0f, 1f)] public float soapSmoothness = 0.82f;
+        [Tooltip("Faint self-glow that fakes light scattering inside the soap.")]
+        [Range(0f, 0.5f)] public float soapGlow = 0.12f;
 
         [Header("Debris")]
         public int maxDebris = 150;
