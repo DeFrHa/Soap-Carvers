@@ -6,7 +6,7 @@ using UnityEngine;
 namespace BuildCrew.Round
 {
     /// <summary>
-    /// One team's patch of the world: truck + pile, sorting pallets, build
+    /// One team's patch of the world: pile, sorting pallets, plan table, build
     /// site, final-test camera, blueprint studio and player spawn. The scene
     /// supports any number of these; GameManager runs the round on all of them.
     /// </summary>
@@ -14,7 +14,7 @@ namespace BuildCrew.Round
     {
         [SerializeField] int teamId;
         [SerializeField] BuildSite site;
-        [SerializeField] Truck truck;
+        [SerializeField] PileDropper pile;
         [SerializeField] FinalTestDirector finalTest;
         [SerializeField] BlueprintStudio studio;
         [SerializeField] List<SortingZone> zones = new List<SortingZone>();
@@ -24,19 +24,19 @@ namespace BuildCrew.Round
 
         public int TeamId => teamId;
         public BuildSite Site => site;
-        public Truck Truck => truck;
+        public PileDropper Pile => pile;
         public FinalTestDirector FinalTest => finalTest;
         public BlueprintStudio Studio => studio;
         public IReadOnlyList<SortingZone> Zones => zones;
         public Transform PlayerSpawn => playerSpawn;
         public Transform SupplyPoint => supplyPoint;
 
-        public void Configure(int team, BuildSite buildSite, Truck dumpTruck, FinalTestDirector test, BlueprintStudio blueprint,
+        public void Configure(int team, BuildSite buildSite, PileDropper pileDropper, FinalTestDirector test, BlueprintStudio blueprint,
             List<SortingZone> sortingZones, Transform spawn, Transform supplies)
         {
             teamId = team;
             site = buildSite;
-            truck = dumpTruck;
+            pile = pileDropper;
             finalTest = test;
             studio = blueprint;
             zones = sortingZones;

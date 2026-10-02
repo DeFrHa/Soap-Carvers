@@ -157,17 +157,19 @@ namespace BuildCrew.Core
                 if (a == null) continue;
                 if (a.Site != null) a.Site.ResetSite();
                 if (a.FinalTest != null) a.FinalTest.ResetTest();
-                if (a.Truck != null)
-                {
-                    a.Truck.ResetAway();
-                    a.Truck.Arrive(settings.briefingSeconds * 0.8f);
-                }
+                if (a.Pile != null) a.Pile.Clear();
                 SpawnStarterSupplies(a);
             }
 
             foreach (PlayerGrabber p in FindObjectsByType<PlayerGrabber>(FindObjectsSortMode.None))
             {
-                if (p.Inventory != null) p.Inventory.Clear();
+                if (p.Inventory != null)
+                {
+                    // Start with a pocketful so the hammer works right away.
+                    p.Inventory.Clear();
+                    p.Inventory.Add(FixMethod.Nails, settings.startNails);
+                    p.Inventory.Add(FixMethod.Screws, settings.startScrews);
+                }
                 TeamArea a = AreaForTeam(p.TeamId);
                 PlayerMotor motor = p.GetComponent<PlayerMotor>();
                 if (a != null && a.PlayerSpawn != null && motor != null) motor.Teleport(a.PlayerSpawn.position, a.PlayerSpawn.rotation);
@@ -207,25 +209,25 @@ namespace BuildCrew.Core
             };
             foreach (TeamArea a in areas)
             {
-                if (a == null || a.Truck == null) continue;
+                if (a == null || a.Pile == null) continue;
                 // Same seed for every team: a fair race.
                 List<PartSpec> pile = PileGenerator.Generate(Kit, _roundSeed, options);
-                a.Truck.Dump(pile, World.Parts);
+                a.Pile.Drop(pile, World.Parts);
             }
             SetState(GameState.Dump);
         }
 
-        /// <summary>The timer starts once the pile has mostly settled, or settleTimeout after the bed tipped.</summary>
+        /// <summary>The timer starts once the pile has mostly settled, or settleTimeout after it was dropped.</summary>
         bool PileReady()
         {
             float latest = -1f;
             foreach (TeamArea a in areas)
             {
-                if (a == null || a.Truck == null) continue;
-                if (!a.Truck.HasDumped) return false;
-                latest = Mathf.Max(latest, a.Truck.DumpFinishedAt);
+                if (a == null || a.Pile == null) continue;
+                latest = Mathf.Max(latest, a.Pile.DroppedAt);
             }
             if (latest < 0f) return true;
+            if (Time.time - latest < 1f) return false; // let it start falling first
             if (Time.time - latest >= settings.settleTimeout) return true;
             PartManager parts = World.Parts;
             return parts == null || parts.PileSettledFraction(settings.settleSpeed) >= settings.settleFraction;
@@ -286,7 +288,7 @@ namespace BuildCrew.Core
             StateChanged?.Invoke(next);
         }
 
-        /// <summary>"m:ss" formatting shared by HUD and tablet.</summary>
+        /// <summary>"m:ss" formatting shared by HUD and plan table.</summary>
         public static string FormatTime(float seconds)
         {
             int s = Mathf.CeilToInt(Mathf.Max(0f, seconds));

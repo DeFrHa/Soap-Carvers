@@ -42,7 +42,7 @@ namespace BuildCrew.Kits
     }
 
     /// <summary>
-    /// Turns a kit into the list of parts the truck brings. Everything comes
+    /// Turns a kit into the list of parts in the pile. Everything comes
     /// in STANDARD sizes: linear parts are first-fit-decreasing packed into the
     /// part type's standard lengths (so a 2 m plank may yield two 1 m boards,
     /// and anything shorter than its stock must be cut), panes come as 1 x 1 m,

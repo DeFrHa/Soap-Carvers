@@ -152,7 +152,7 @@ namespace BuildCrew.Parts
             Destroy(part.gameObject);
         }
 
-        /// <summary>Glass hit something hard enough? Only armed once building starts (the truck ride is bubble-wrapped).</summary>
+        /// <summary>Glass hit something hard enough? Only armed once building starts (the pile is bubble-wrapped).</summary>
         public void ReportImpact(Part part, Collision collision)
         {
             GameManager game = World.Game;

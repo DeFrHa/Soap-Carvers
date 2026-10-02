@@ -16,7 +16,7 @@ namespace BuildCrew.Building
     }
 
     /// <summary>
-    /// What the tablet shows: per needed part group, how many are in the
+    /// What the plan table shows: per needed part group, how many are in the
     /// building and how many are sorted onto pallets. Parts still in the pile
     /// (or lying around) are deliberately NOT counted: they show as "?".
     /// </summary>

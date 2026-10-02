@@ -10,17 +10,14 @@ namespace BuildCrew.Tools
     {
         public bool PrimaryHeld;
         public bool PrimaryPressed;
-        public bool SecondaryHeld;
         /// <summary>Mouse delta in pixels this frame.</summary>
         public Vector2 MouseDelta;
-        /// <summary>0-3 when a view key was pressed this frame, else -1.</summary>
-        public int ViewKey;
         public float DeltaTime;
     }
 
     /// <summary>
     /// Base class for tools: physical pickups (rigidbodies, grabbed at their
-    /// grip and held by the physics joint in front of the camera). The holding
+    /// grip and held rigidly in a pose in front of the camera). The holding
     /// player's PlayerActions calls <see cref="Tick"/> every frame; LMB maps to
     /// StartUse / StopUse, and subclasses implement <see cref="Use"/> (one
     /// action) and may override the hooks for continuous use. Tools never

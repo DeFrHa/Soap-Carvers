@@ -112,9 +112,7 @@ namespace BuildCrew.Player
                     {
                         PrimaryHeld = _input.PrimaryHeld,
                         PrimaryPressed = _input.PrimaryPressed,
-                        SecondaryHeld = _input.SecondaryHeld,
                         MouseDelta = _input.Look,
-                        ViewKey = _input.ViewKeyPressed,
                         DeltaTime = Time.deltaTime,
                     });
                     if (tool.CapturesMouse) SuppressLook = true;
@@ -126,7 +124,7 @@ namespace BuildCrew.Player
             }
             else if (held is Tool idleTool && idleTool.PrimaryGrabber == (IGrabber)_grabber)
             {
-                idleTool.Tick(_grabber, new ToolInput { DeltaTime = Time.deltaTime, ViewKey = -1 });
+                idleTool.Tick(_grabber, new ToolInput { DeltaTime = Time.deltaTime });
             }
 
             // ---- R: restart from the results screen

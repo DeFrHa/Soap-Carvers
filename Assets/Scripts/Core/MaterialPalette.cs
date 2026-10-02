@@ -34,7 +34,6 @@ namespace BuildCrew.Core
         {
             new Spec("ground", new Color(0.47f, 0.72f, 0.35f)),
             new Spec("dirt", new Color(0.55f, 0.43f, 0.3f)),
-            new Spec("road", new Color(0.32f, 0.32f, 0.34f)),
             new Spec("trunk", new Color(0.5f, 0.33f, 0.2f)),
             new Spec("leavesGreen", new Color(0.32f, 0.66f, 0.3f)),
             new Spec("leavesLime", new Color(0.55f, 0.8f, 0.3f)),
@@ -66,8 +65,6 @@ namespace BuildCrew.Core
             new Spec("white", new Color(0.96f, 0.96f, 0.96f)),
             new Spec("black", new Color(0.08f, 0.08f, 0.09f), Kind.Glossy),
             new Spec("rubber", new Color(0.12f, 0.12f, 0.12f)),
-            new Spec("truck", new Color(0.95f, 0.75f, 0.15f), Kind.Glossy),
-            new Spec("tarp", new Color(0.2f, 0.45f, 0.75f)),
             new Spec("cement", new Color(0.72f, 0.72f, 0.7f)),
             new Spec("sand", new Color(0.93f, 0.8f, 0.55f)),
             new Spec("water", new Color(0.3f, 0.6f, 0.95f), Kind.Glossy),

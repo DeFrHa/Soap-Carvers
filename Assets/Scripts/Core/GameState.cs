@@ -2,9 +2,9 @@ namespace BuildCrew.Core
 {
     public enum GameState
     {
-        /// <summary>Target shown on the tablet/HUD while the truck drives in.</summary>
+        /// <summary>Target and stages shown on screen before the pile arrives.</summary>
         Briefing = 0,
-        /// <summary>The truck tips its bed; waiting for the pile to settle.</summary>
+        /// <summary>The pile drops in; waiting for it to settle.</summary>
         Dump = 1,
         /// <summary>Timer running: sort, prepare and assemble.</summary>
         Build = 2,

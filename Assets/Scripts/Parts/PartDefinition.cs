@@ -39,7 +39,7 @@ namespace BuildCrew.Parts
         public virtual float Density => 500f;
         public virtual float Mass(Vector3 size) => Mathf.Max(0.2f, size.x * size.y * size.z * Density);
 
-        /// <summary>Stock lengths the truck brings (linear types), or null for parts delivered as-is.</summary>
+        /// <summary>Stock lengths the pile contains (linear types), or null for parts delivered as-is.</summary>
         public virtual float[] StandardLengths => null;
         public bool IsLinear => StandardLengths != null;
 

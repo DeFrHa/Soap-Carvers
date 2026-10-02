@@ -17,11 +17,11 @@ namespace BuildCrew.Building
     /// <summary>
     /// A hidden "photo studio" far above the world: a hologram model of the
     /// team's kit (one box per slot, on the Hologram layer) and an orthographic
-    /// camera that renders it into a RenderTexture for the blueprint tablet
+    /// camera that renders it into a RenderTexture for the plan table
     /// and the briefing screen. Fixed slots show green, the current stage
     /// yellow, the rest blue.
     ///
-    /// Multiplayer note: one studio per team, so a team's tablets share the view.
+    /// Multiplayer note: one studio per team (one plan table each).
     /// </summary>
     public class BlueprintStudio : MonoBehaviour
     {

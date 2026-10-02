@@ -26,11 +26,11 @@ namespace BuildCrew.Core
     /// end, managers first, so at runtime each component's Awake runs after its
     /// references were assigned and the managers exist.
     ///
-    /// Layout of team area 0 (meters, world): the truck parks at z = 13 with its
-    /// tail toward the pile at z ~ 6; pallets line both sides between pile and
-    /// site; the build site is at z = -11 (front facing the pile), tool rack to
-    /// its left, mortar station to its right; the player spawns at z = -1
-    /// facing the arriving truck. More teams would get their own area offset in x.
+    /// Layout of team area 0 (meters, world): the pile drops at z ~ 6; pallets
+    /// line both sides between pile and site; the plan table stands between
+    /// spawn and site; the build site is at z = -11 (front facing the pile),
+    /// tool rack to its left, mortar station to its right; the player spawns at
+    /// z = -1 facing the pile. More teams would get their own area offset in x.
     /// </summary>
     public class SceneBuilder
     {
@@ -109,7 +109,7 @@ namespace BuildCrew.Core
                 entries.Add(new MaterialPalette.Entry { key = spec.Key, material = m });
             }
             _palette.SetEntries(entries);
-            _screen = Persist(MaterialFactory.UnlitTexture("TabletScreen", null), "Materials/TabletScreen.mat");
+            _screen = Persist(MaterialFactory.UnlitTexture("PlanScreen", null), "Materials/PlanScreen.mat");
 
             Shader skyShader = Shader.Find("Skybox/Procedural");
             if (skyShader != null)
@@ -231,8 +231,7 @@ namespace BuildCrew.Core
                 float angle = (float)(i / 24.0 * Math.PI * 2 + rng.NextDouble() * 0.2);
                 float dist = 40f + (float)rng.NextDouble() * 45f;
                 var pos = new Vector3(Mathf.Cos(angle) * dist, 0f, Mathf.Sin(angle) * dist);
-                if (Mathf.Abs(pos.x) < 8f && pos.z > 0f) continue; // keep the truck road clear
-                float h = 3f + (float)rng.NextDouble() * 4f;
+                                float h = 3f + (float)rng.NextDouble() * 4f;
                 Transform tree = Node("Tree", trees, pos, new Vector3(0f, (float)rng.NextDouble() * 360f, 0f)).transform;
                 Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, h * 0.5f, 0f), new Vector3(0.6f, h * 0.5f, 0.6f), "trunk");
                 float crown = 2.5f + (float)rng.NextDouble() * 2.5f;
@@ -251,8 +250,7 @@ namespace BuildCrew.Core
             _detachOrder.Add(a);
             var area = areaGo.AddComponent<TeamArea>();
 
-            // Road for the truck and a dirt plot for the building.
-            Box("Road", a, new Vector3(0f, 0.005f, 45f), new Vector3(5f, 0.01f, 70f), "road", false);
+            // Dirt where the pile lands and where the building goes.
             Box("PileDirt", a, new Vector3(0f, 0.004f, 6f), new Vector3(11f, 0.008f, 9f), "dirt", false);
             Box("SitePlot", a, new Vector3(0f, 0.004f, -11f), new Vector3(12f, 0.008f, 11f), "dirt", false);
 
@@ -269,16 +267,17 @@ namespace BuildCrew.Core
             site.Configure(team, team);
 
             BlueprintStudio studio = BuildStudio(team, site);
-            Truck truck = BuildTruck(a, new Vector3(0f, 0f, 13f));
+            PileDropper pile = Node("PileSpot", a, new Vector3(0f, 0f, 6f)).AddComponent<PileDropper>();
+            BuildPlanTable(a, new Vector3(-3.8f, 0f, -2.4f), area);
             FinalTestDirector test = BuildFinalTest(a, site);
             List<SortingZone> zones = BuildPallets(a, team);
             BuildMortarStation(a, new Vector3(9.5f, 0f, -9f));
-            Transform supply = BuildToolRack(a, new Vector3(-9.5f, 0f, -9f), area);
+            Transform supply = BuildToolRack(a, new Vector3(-9.5f, 0f, -9f));
             BuildLadder(a, new Vector3(-6.5f, 0.05f, -16.5f));
             BuildWheelbarrow(a, new Vector3(3.2f, 0f, -0.5f));
             BuildBell(a, new Vector3(5.5f, 0f, -5.5f));
 
-            area.Configure(team, site, truck, test, studio, zones, spawn, supply);
+            area.Configure(team, site, pile, test, studio, zones, spawn, supply);
             return area;
         }
 
@@ -307,48 +306,6 @@ namespace BuildCrew.Core
             var director = go.AddComponent<FinalTestDirector>();
             director.Configure(site, cam, M("rain"));
             return director;
-        }
-
-        // ================================================================ truck
-
-        Truck BuildTruck(Transform area, Vector3 parkPos)
-        {
-            const float bedLength = 6.2f, bedWidth = 2.3f, floorT = 0.1f, wallH = 0.75f;
-            var hinge = new Vector3(0f, 1.15f, -3.5f);
-
-            GameObject truckGo = Node("Truck", area, parkPos);
-            var chassis = truckGo.AddComponent<Rigidbody>();
-            chassis.isKinematic = true;
-            chassis.interpolation = RigidbodyInterpolation.Interpolate;
-            Transform t = truckGo.transform;
-            Box("Frame", t, new Vector3(0f, 0.85f, 0f), new Vector3(2.2f, 0.35f, 8.4f), "black");
-            Box("Cab", t, new Vector3(0f, 2.0f, 3.65f), new Vector3(2.5f, 2.0f, 1.9f), "truck");
-            Box("Windshield", t, new Vector3(0f, 2.35f, 4.61f), new Vector3(2.2f, 0.8f, 0.04f), "glass", false);
-            Box("Bumper", t, new Vector3(0f, 0.7f, 4.7f), new Vector3(2.6f, 0.3f, 0.2f), "metal");
-            Box("Light", t, new Vector3(0.9f, 1.25f, 4.62f), new Vector3(0.3f, 0.2f, 0.04f), "yellow", false);
-            Box("Light", t, new Vector3(-0.9f, 1.25f, 4.62f), new Vector3(0.3f, 0.2f, 0.04f), "yellow", false);
-            foreach (float z in new[] { -2.6f, -1.5f, 3.4f })
-            for (int s = -1; s <= 1; s += 2)
-                Prim(PrimitiveType.Cylinder, "Wheel", t, new Vector3(s * 1.15f, 0.55f, z), new Vector3(1.1f, 0.18f, 1.1f), "rubber", false,
-                    new Vector3(0f, 0f, 90f));
-
-            // Bed: its own kinematic body, pivot on the rear hinge, floor running toward the cab.
-            GameObject bedGo = Node("TruckBed", area, parkPos + hinge);
-            var bed = bedGo.AddComponent<Rigidbody>();
-            bed.isKinematic = true;
-            bed.interpolation = RigidbodyInterpolation.Interpolate;
-            Transform b = bedGo.transform;
-            Box("Floor", b, new Vector3(0f, floorT * 0.5f, bedLength * 0.5f), new Vector3(bedWidth + 0.2f, floorT, bedLength), "truck");
-            for (int s = -1; s <= 1; s += 2)
-                Box("Side", b, new Vector3(s * (bedWidth * 0.5f + 0.05f), floorT + wallH * 0.5f, bedLength * 0.5f),
-                    new Vector3(0.1f, wallH, bedLength), "truck");
-            Box("Front", b, new Vector3(0f, floorT + wallH * 0.8f, bedLength + 0.05f), new Vector3(bedWidth + 0.2f, wallH * 1.6f, 0.1f), "truck");
-            GameObject cargo = Box("CoveredLoad", b, new Vector3(0f, floorT + 0.75f, bedLength * 0.5f),
-                new Vector3(bedWidth - 0.05f, 1.5f, bedLength - 0.2f), "tarp", false);
-
-            var truck = truckGo.AddComponent<Truck>();
-            truck.Configure(chassis, bed, cargo, hinge, bedLength, bedWidth, floorT);
-            return truck;
         }
 
         // ============================================================== pallets
@@ -462,7 +419,7 @@ namespace BuildCrew.Core
 
         // ============================================================ tool rack
 
-        Transform BuildToolRack(Transform area, Vector3 pos, TeamArea teamArea)
+        Transform BuildToolRack(Transform area, Vector3 pos)
         {
             Quaternion rot = area.rotation * Quaternion.Euler(0f, 90f, 0f);
             var rack = Item<Grabbable>("Tool Rack", area, area.TransformPoint(pos), rot, 70f, out Transform m);
@@ -484,7 +441,6 @@ namespace BuildCrew.Core
             BuildSaw(Top(-0.05f), rot * Quaternion.Euler(0f, 0f, 90f));
             BuildGlassCutter(Top(0.4f), rot);
             BuildTrowel(Top(0.7f), rot);
-            BuildTablet(Top(1.2f, -0.1f) + Vector3.up * 0.03f, rot * Quaternion.Euler(80f, 0f, 0f), teamArea);
 
             // Starter fixings appear on the lower shelf each round.
             GameObject supply = Node("SupplyPoint", rt, new Vector3(-1f, 0.6f, -0.05f));
@@ -551,42 +507,74 @@ namespace BuildCrew.Core
             shovel.ConfigureGrip(new Vector3(0f, 0.35f, 0f), new Vector3(0.2f, -0.15f, 0.55f), new Vector3(-45f, 0f, 0f));
         }
 
-        void BuildTablet(Vector3 pos, Quaternion rot, TeamArea teamArea)
+        /// <summary>
+        /// A drafting table with the building plan pinned to its tilted board:
+        /// the hologram render on the left, stage / checklist / cut list on the right.
+        /// </summary>
+        void BuildPlanTable(Transform area, Vector3 pos, TeamArea teamArea)
         {
-            var tablet = Item<BlueprintTablet>("Blueprint Tablet", _root, pos, rot, 0.9f, out Transform m);
-            const float tw = 0.7f, th = 0.45f;
-            Box("Body", m, Vector3.zero, new Vector3(tw, th, 0.03f), "black");
-            // Quad faces -Z: the side that looks at the camera when held.
-            GameObject screen = Prim(PrimitiveType.Quad, "Screen", m, new Vector3(-0.13f, -0.015f, -0.0165f), new Vector3(0.4f, 0.4f, 1f), "black", false);
-            screen.GetComponent<MeshRenderer>().sharedMaterial = _screen;
-            screen.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+            // Turned so the board faces the player coming from the spawn (+z).
+            Quaternion rot = area.rotation * Quaternion.Euler(0f, 180f, 0f);
+            Item<Grabbable>("Plan Table", area, area.TransformPoint(pos), rot, 80f, out Transform m);
+            const float w = 2.2f, d = 1.3f, h = 0.85f;
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+                Box("Leg", m, new Vector3(sx * (w * 0.5f - 0.08f), h * 0.5f, sz * (d * 0.5f - 0.08f)), new Vector3(0.08f, h, 0.08f), "darkWood");
+            Box("Frame", m, new Vector3(0f, h, 0f), new Vector3(w, 0.06f, d), "darkWood");
 
-            // World-space canvas overlay: 1 canvas unit = 1 mm.
-            GameObject canvasGo = Node("ScreenCanvas", m, new Vector3(0f, 0f, -0.018f));
+            // Tilted board (60 deg): its -z face points up and toward the reader.
+            const float bw = 2.1f, bh = 1.25f;
+            GameObject board = Node("PlanBoard", m, new Vector3(0f, h + 0.42f, 0.1f), new Vector3(60f, 0f, 0f));
+            Box("Board", board.transform, Vector3.zero, new Vector3(bw, bh, 0.04f), "frame");
+            Box("Prop", m, new Vector3(0f, h + 0.3f, 0.45f), new Vector3(1.8f, 0.6f, 0.05f), "darkWood");
+            // Pins in the corners.
+            foreach (Vector2 c in new[] { new Vector2(-1f, -1f), new Vector2(1f, -1f), new Vector2(-1f, 1f), new Vector2(1f, 1f) })
+                Prim(PrimitiveType.Sphere, "Pin", board.transform, new Vector3(c.x * (bw * 0.5f - 0.05f), c.y * (bh * 0.5f - 0.05f), -0.03f),
+                    Vector3.one * 0.035f, "red", false);
+
+            // The hologram render, a square on the left.
+            const float img = 1.05f;
+            GameObject screen = Prim(PrimitiveType.Quad, "Blueprint", board.transform, new Vector3(-bw * 0.5f + img * 0.5f + 0.05f, -0.03f, -0.022f),
+                new Vector3(img, img, 1f), "frame", false);
+            var sr = screen.GetComponent<MeshRenderer>();
+            sr.sharedMaterial = _screen;
+            sr.shadowCastingMode = ShadowCastingMode.Off;
+
+            // Text on the paper: 1 canvas unit = 1 mm.
+            GameObject canvasGo = Node("PlanCanvas", board.transform, Vector3.zero);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = canvasGo.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(tw * 1000f, th * 1000f);
-            rt.localPosition = new Vector3(0f, 0f, -0.018f);
+            rt.sizeDelta = new Vector2(bw * 1000f, bh * 1000f);
+            rt.localPosition = new Vector3(0f, 0f, -0.023f);
             rt.localRotation = Quaternion.identity;
             rt.localScale = Vector3.one * 0.001f;
-            canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 3f;
+            canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 2f;
 
-            Text title = MakeText(canvasGo.transform, "Title", 18, TextAnchor.UpperLeft, FontStyle.Bold,
-                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -26f), new Vector2(-16f, 0f), new Vector2(8f, -2f));
-            Text timer = MakeText(canvasGo.transform, "Timer", 20, TextAnchor.UpperRight, FontStyle.Bold,
-                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -26f), new Vector2(-16f, 0f), new Vector2(-8f, -2f));
-            Text view = MakeText(canvasGo.transform, "Views", 13, TextAnchor.LowerLeft, FontStyle.Normal,
-                new Vector2(0f, 0f), new Vector2(0.62f, 0f), new Vector2(0f, 22f), new Vector2(0f, 0f), new Vector2(10f, 2f));
-            Text info = MakeText(canvasGo.transform, "Checklist", 11, TextAnchor.UpperLeft, FontStyle.Normal,
-                new Vector2(0.6f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, Vector2.zero);
-            info.rectTransform.offsetMin = new Vector2(4f, 6f);
-            info.rectTransform.offsetMax = new Vector2(-6f, -32f);
+            Text title = MakeText(canvasGo.transform, "Title", 44, TextAnchor.UpperLeft, FontStyle.Bold,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), new Vector2(-40f, 0f), new Vector2(20f, -8f));
+            Text timer = MakeText(canvasGo.transform, "Timer", 48, TextAnchor.UpperRight, FontStyle.Bold,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), new Vector2(-40f, 0f), new Vector2(-20f, -8f));
+            Text view = MakeText(canvasGo.transform, "Views", 30, TextAnchor.LowerLeft, FontStyle.Normal,
+                new Vector2(0f, 0f), new Vector2(0.52f, 0f), new Vector2(0f, 44f), new Vector2(0f, 0f), new Vector2(30f, 6f));
+            Text info = MakeText(canvasGo.transform, "Checklist", 30, TextAnchor.UpperLeft, FontStyle.Normal,
+                new Vector2(0.53f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, Vector2.zero);
+            info.rectTransform.offsetMin = new Vector2(10f, 20f);
+            info.rectTransform.offsetMax = new Vector2(-20f, -80f);
             info.verticalOverflow = VerticalWrapMode.Truncate;
-            info.supportRichText = true;
+            info.resizeTextForBestFit = true;
+            info.resizeTextMinSize = 14;
+            info.resizeTextMaxSize = 30;
+            // Dark ink on light paper.
+            foreach (Text t in new[] { title, timer, view, info })
+            {
+                t.color = new Color(0.08f, 0.12f, 0.25f);
+                Outline o = t.GetComponent<Outline>();
+                if (o != null) Kill(o);
+            }
 
-            tablet.ConfigureGrip(new Vector3(0f, -th * 0.5f, 0f), new Vector3(0.28f, -0.36f, 0.55f), new Vector3(35f, -18f, 0f));
-            tablet.SetParts(teamArea, screen.GetComponent<MeshRenderer>(), title, timer, view, info);
+            var plan = board.AddComponent<PlanTable>();
+            plan.SetParts(teamArea, sr, title, timer, view, info);
         }
 
         // ===================================================== ladder, barrow, bell
@@ -796,8 +784,8 @@ namespace BuildCrew.Core
             hud.controlsText.text =
                 "WASD move  Shift sprint  Space jump\n" +
                 "E grab / release / use station  G throw  Scroll hold distance\n" +
-                "Hold R + mouse rotate held  LMB use tool\n" +
-                "RMB/Tab raise tablet  1-4 views  Esc free mouse\n" +
+                "Hold R + mouse rotate held  LMB use tool  Esc free mouse\n" +
+                "The plan is on the table by the site (E: next view)\n" +
                 "Ladder: walk into it + look up/down";
             hud.controlsText.color = new Color(1f, 1f, 1f, 0.7f);
 

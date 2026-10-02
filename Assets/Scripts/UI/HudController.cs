@@ -129,7 +129,7 @@ namespace BuildCrew.UI
             switch (state)
             {
                 case GameState.Briefing:
-                    SetText(bannerText, $"BRIEFING - the truck arrives in {Mathf.CeilToInt(game.BriefingTimeLeft)}");
+                    SetText(bannerText, $"BRIEFING - the pile arrives in {Mathf.CeilToInt(game.BriefingTimeLeft)}");
                     break;
                 case GameState.Dump:
                     SetText(bannerText, "HERE COMES THE PILE!  (the clock starts when it settles)");
@@ -172,9 +172,10 @@ namespace BuildCrew.UI
                 .Append("     Final test: ").Append(game.Kit.GetFinalTest() == Kits.FinalTestKind.WindRain ? "wind + rain" : "wind")
                 .Append("     Parts: ").Append(game.Kit.slots.Length).Append("\n\n<b>Stages</b>\n");
             for (int i = 0; i < game.Kit.StageCount(); i++) _sb.Append(i + 1).Append(". ").Append(game.Kit.StageName(i)).Append('\n');
-            _sb.Append("\nSort the pile onto the pallets, cut parts to length, mix mortar,\n")
-                .Append("hold parts near their glowing ghost to snap them in, then nail / screw / mortar them.\n")
-                .Append("The blueprint tablet (RMB/Tab) shows the target and the checklist.");
+            _sb.Append("\nSort the pile onto the pallets, cut parts to length, mix mortar.\n")
+                .Append("Carry a part to a GREEN ghost: it snaps in. Then fix it:\n")
+                .Append("hammer = 3 hits (wood), screwdriver (door, tin roof), trowel + mortar (stone, bricks).\n")
+                .Append("The plan table by the site shows the target and the checklist.");
             briefingText.text = _sb.ToString();
         }
 
