@@ -55,9 +55,53 @@ namespace BuildCrew.Parts
         {
             get
             {
-                string state = State == PartState.Snapped ? "  [placed - needs fixing]" : State == PartState.Fixed ? "  [fixed]" : string.Empty;
+                string state = State == PartState.Fixed ? "  [fixed]" : State == PartState.Snapped ? $"  [placed - {FixHint}]" : string.Empty;
                 string size = Definition != null && Definition.IsJunk ? string.Empty : " " + SizeLabel;
                 return $"{DisplayName}{size}  ({WeightClasses.Label(Weight)}, {Body.mass:0.#} kg){state}";
+            }
+        }
+
+        /// <summary>How to fix this placed part, with progress.</summary>
+        string FixHint
+        {
+            get
+            {
+                if (Slot == null) return "needs fixing";
+                string progress = $"{Slot.FixProgress}/{Slot.FixNeeded(World.Settings)}";
+                switch (Slot.Method)
+                {
+                    case FixMethod.Nails: return $"hit it with the HAMMER to nail it {progress}";
+                    case FixMethod.Screws: return $"hold LMB with the SCREWDRIVER {progress}";
+                    default: return "TROWEL fresh mortar onto it";
+                }
+            }
+        }
+
+        /// <summary>While carrying: where does this go?</summary>
+        public override string HeldHint
+        {
+            get
+            {
+                const string keys = "E: Release   G: Throw   Scroll: Distance   R+Mouse: Rotate";
+                if (Definition != null && Definition.IsJunk) return "This isn't part of any building...   " + keys;
+                int free = 0, ready = 0;
+                BuildManager build = World.Build;
+                if (build != null)
+                {
+                    GameSettings s = World.Settings;
+                    foreach (BuildSite site in build.Sites)
+                    foreach (BuildSlot slot in site.Slots)
+                    {
+                        if (slot.State != SlotState.Empty || !slot.TryMatch(this, s, out _, out _)) continue;
+                        free++;
+                        if (slot.RestsSatisfied) ready++;
+                    }
+                }
+                if (ready > 0) return "Bring it to a GREEN ghost to place it   " + keys;
+                if (free > 0) return "Its spot isn't ready yet: fix the parts it rests on first   " + keys;
+                return (Definition != null && Definition.CutTool != CutTool.None
+                    ? "No slot this size: cut it to a needed length   "
+                    : "Not needed (any more)   ") + keys;
             }
         }
 

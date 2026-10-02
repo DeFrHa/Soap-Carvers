@@ -10,10 +10,10 @@ namespace BuildCrew.Building
 {
     /// <summary>
     /// One team's building plot. Builds a BuildSlot per kit slot (ghost
-    /// outline: current stage glows, later stages faint, a slot about to
-    /// accept a held part lights up green), watches the team's held parts and
-    /// sends SnapCommands when one is close and aligned enough, and notices
-    /// parts that leave their slot (UnsnapCommand).
+    /// outline: current stage glows, later stages faint, every slot that fits
+    /// the part you're holding lights up green), watches the team's held parts
+    /// and sends SnapCommands when one is close enough, and notices parts that
+    /// leave their slot (UnsnapCommand).
     /// </summary>
     public class BuildSite : MonoBehaviour
     {
@@ -22,7 +22,7 @@ namespace BuildCrew.Building
 
         readonly List<BuildSlot> _slots = new List<BuildSlot>();
         readonly Dictionary<string, BuildSlot> _byId = new Dictionary<string, BuildSlot>();
-        BuildSlot _highlight;
+        readonly HashSet<BuildSlot> _targets = new HashSet<BuildSlot>();
         float _ghostTimer;
 
         public int SiteIndex => siteIndex;
@@ -148,19 +148,24 @@ namespace BuildCrew.Building
             GameState state = game != null ? game.State : GameState.Build;
             GameSettings s = World.Settings;
 
-            _highlight = null;
+            bool hadTargets = _targets.Count > 0;
+            _targets.Clear();
             if (state == GameState.Build) DetectSnaps(s);
             if (state == GameState.Build || state == GameState.FinalTest) WatchSlots(s);
 
             _ghostTimer -= Time.deltaTime;
-            if (_ghostTimer <= 0f || _highlight != null)
+            if (_ghostTimer <= 0f || hadTargets || _targets.Count > 0)
             {
                 _ghostTimer = 0.15f;
                 RefreshGhosts();
             }
         }
 
-        /// <summary>Held parts of this team: snap into a matching active slot when close and aligned.</summary>
+        /// <summary>
+        /// Held parts of this team: every free, ready slot that fits the part
+        /// glows green; when the part's center comes within snapDistance of one,
+        /// it snaps in (the soft spring then turns it into place).
+        /// </summary>
         void DetectSnaps(GameSettings s)
         {
             GrabManager grabs = World.Grabs;
@@ -174,26 +179,25 @@ namespace BuildCrew.Building
                 Vector3 pos = part.transform.position;
                 foreach (BuildSlot slot in _slots)
                 {
-                    if (!slot.IsActive) continue;
+                    if (!slot.IsActive || !slot.TryMatch(part, s, out _, out float angle)) continue;
                     float d = Vector3.Distance(pos, slot.TargetPosition);
                     if (slot == part.SnapBlockedSlot)
                     {
+                        // Just taken out of here: don't snap straight back until moved away once.
                         if (d > s.snapDistance * 1.5f) part.SnapBlockedSlot = null;
                         else continue;
                     }
-                    if (d > 1.5f || d >= bestDist) continue;
-                    if (!slot.TryMatch(part, s, out _, out float angle)) continue;
+                    _targets.Add(slot);
+                    if (d >= bestDist) continue;
                     best = slot;
                     bestDist = d;
                     bestAngle = angle;
                 }
-                if (best == null) continue;
-                if (bestDist <= s.snapDistance && bestAngle <= s.snapAngle)
+                if (best != null && bestDist <= s.snapDistance && bestAngle <= s.snapAngle)
                 {
                     CommandBus bus = World.Bus;
                     if (bus != null) bus.Execute(new SnapCommand { PlayerId = g.PlayerId, SiteIndex = siteIndex, SlotId = best.Id, PartId = part.EntityId });
                 }
-                else _highlight = best;
             }
         }
 
@@ -228,7 +232,7 @@ namespace BuildCrew.Building
             {
                 Material m;
                 if (hidden || slot.State != SlotState.Empty) m = null;
-                else if (slot == _highlight) m = target;
+                else if (_targets.Contains(slot)) m = target;
                 else if (slot.IsActive) m = slot.Stage <= current ? active : stage;
                 else m = slot.Stage == current ? stage : faint;
                 slot.SetGhostMaterial(m);

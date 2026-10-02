@@ -107,7 +107,7 @@ namespace BuildCrew.Building
             if (player == null) return false;
             if (player.Inventory != null && player.Inventory.TryConsume(cmd.Method, 1)) return true;
 
-            FixingBox box = NearestBox(player.Root.position, cmd.Method, 2.5f);
+            FixingBox box = NearestBox(player.Root.position, cmd.Method, World.Settings.fixingBoxReach);
             return box != null && box.Take(1) == 1;
         }
 

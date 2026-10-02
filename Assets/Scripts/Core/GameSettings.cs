@@ -56,12 +56,14 @@ namespace BuildCrew.Core
         [Range(0.1f, 1f)] public float heavyCarrySpeed = 0.4f;
 
         [Header("Snapping and fixing")]
-        public float snapDistance = 0.3f;
-        public float snapAngle = 20f;
+        [Tooltip("A held part snaps into a matching ghost when its center is this close (m).")]
+        public float snapDistance = 0.6f;
+        [Tooltip("Max angle (deg) between how you hold it and how it fits. 180 = any; the snap spring turns it into place.")]
+        public float snapAngle = 180f;
         [Tooltip("Size tolerance when matching a part to a slot (m). Brief: +-5 cm.")]
         public float sizeTolerance = 0.05f;
         [Tooltip("Soft snap spring frequency (rad/s).")]
-        public float snapFrequency = 7f;
+        public float snapFrequency = 12f;
         [Tooltip("Soft snap spring max force as a multiple of the part's weight (plus 150 N).")]
         public float snapForceWeights = 2.5f;
         [Tooltip("A snapped part pulled further than this from its slot comes loose.")]
@@ -70,6 +72,11 @@ namespace BuildCrew.Core
         public int screwsPerFix = 3;
         public float screwSeconds = 0.6f;
         public int fixingsPerHandful = 20;
+        [Tooltip("Nails/screws every player has in their pockets at round start.")]
+        public int startNails = 30;
+        public int startScrews = 15;
+        [Tooltip("Fixing draws from a box of nails/screws within this distance when your pockets are empty.")]
+        public float fixingBoxReach = 4f;
         public int fixingsPerBox = 50;
         [Tooltip("Fixed joint strength (N / N m) per fixing method.")]
         public float nailBreakForce = 6000f;
