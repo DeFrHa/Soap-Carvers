@@ -1,14 +1,16 @@
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     public enum GameState
     {
-        /// <summary>Lobby: walk around, grab tools. First carve or the Start button begins the round.</summary>
-        Ready = 0,
-        /// <summary>Timer running, tools work.</summary>
-        Carving = 1,
-        /// <summary>Time is up; the scan plane sweeps the block. Tools disabled.</summary>
-        Scanning = 2,
-        /// <summary>Score screen. R restarts.</summary>
-        Results = 3,
+        /// <summary>Target shown on the tablet/HUD while the truck drives in.</summary>
+        Briefing = 0,
+        /// <summary>The truck tips its bed; waiting for the pile to settle.</summary>
+        Dump = 1,
+        /// <summary>Timer running: sort, prepare and assemble.</summary>
+        Build = 2,
+        /// <summary>Wind (and rain) hit the building; fixed camera.</summary>
+        FinalTest = 3,
+        /// <summary>Score screen. R restarts with a new pile.</summary>
+        Results = 4,
     }
 }

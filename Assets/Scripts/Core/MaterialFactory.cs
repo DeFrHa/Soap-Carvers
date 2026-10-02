@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     /// <summary>
     /// Creates simple URP materials from code. Falls back to built-in shaders if
@@ -62,13 +62,27 @@ namespace SoapCarvers.Core
             if (m.HasProperty("_MainTex")) m.SetTexture("_MainTex", texture);
         }
 
+        /// <summary>Alpha-blended lit material (glass). Same URP property setup as the unlit variant.</summary>
+        public static Material LitTransparent(string name, Color color, float smoothness = 0.9f)
+        {
+            Material m = Lit(name, color, smoothness);
+            MakeTransparent(m, false);
+            return m;
+        }
+
         /// <summary>Alpha-blended, double-sided unlit material (URP property setup).</summary>
         public static Material UnlitTransparent(string name, Color color)
         {
             Material m = Unlit(name, color);
+            MakeTransparent(m, true);
+            return m;
+        }
+
+        static void MakeTransparent(Material m, bool doubleSided)
+        {
             m.SetFloat("_Surface", 1f);          // 0 = Opaque, 1 = Transparent
             m.SetFloat("_Blend", 0f);            // Alpha
-            m.SetFloat("_Cull", (float)CullMode.Off);
+            if (doubleSided) m.SetFloat("_Cull", (float)CullMode.Off);
             m.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
             m.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
             m.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
@@ -77,7 +91,6 @@ namespace SoapCarvers.Core
             m.SetOverrideTag("RenderType", "Transparent");
             m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             m.renderQueue = (int)RenderQueue.Transparent;
-            return m;
         }
     }
 }

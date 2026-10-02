@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     /// <summary>
     /// Shared physics materials, created at runtime on first use (so nothing has
@@ -11,7 +11,7 @@ namespace SoapCarvers.Core
         static PhysicsMaterial _grippy;
         static PhysicsMaterial _frictionless;
 
-        /// <summary>Ladder feet, braked wheels: high friction, wins over the other surface.</summary>
+        /// <summary>Ladder feet: high friction, wins over the other surface.</summary>
         public static PhysicsMaterial Grippy
         {
             get
@@ -31,7 +31,7 @@ namespace SoapCarvers.Core
             }
         }
 
-        /// <summary>Unbraked caster wheels: slide freely (damping on the body provides rolling resistance).</summary>
+        /// <summary>Wheel stand-ins: slide freely (damping on the body provides rolling resistance).</summary>
         public static PhysicsMaterial Frictionless
         {
             get

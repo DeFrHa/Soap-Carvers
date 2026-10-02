@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     /// <summary>
     /// Layer lookup. The editor menu creates a "Hologram" layer in TagManager;
