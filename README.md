@@ -1,7 +1,7 @@
 # Build Crew (working title)
 
-A wonky first-person "friendslop" co-op building game. A truck dumps a big,
-tangled physics pile of building parts. Sort it onto pallets, saw planks to
+A wonky first-person "friendslop" co-op building game. A big, tangled
+physics pile of building parts lands next to an empty plot. Sort it onto pallets, saw planks to
 length, cut glass, mix mortar, and assemble the building from the blueprint
 before the clock runs out. Then the wind (and rain) test shows what you built
 badly.

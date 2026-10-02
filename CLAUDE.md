@@ -1,8 +1,8 @@
 # Build Crew – notes for Claude / contributors
 
 A wonky first-person "friendslop" co-op building game (working title; replaces
-the Soap Carvers prototype, which lives on in git history). A truck dumps an
-unsorted PHYSICS pile of building parts. The crew sorts it onto pallets,
+the Soap Carvers prototype, which lives on in git history). A big unsorted
+PHYSICS pile of building parts. The crew sorts it onto pallets,
 prepares parts (saw, cut glass, mix mortar) and assembles a building from a
 blueprint before the timer runs out. Then a final test (wind, rain) shows
 what was built badly. Single player now, built so a network layer (Netcode
@@ -41,12 +41,12 @@ Assets/
     Interaction/ Grabbable (physics grab), GrabManager, GrabCommands, IGrabber/IInteractable,
                  WeightClass
     Building/    BuildSite, BuildSlot, BuildManager, BuildCommands, SlotMatcher,
-                 Checklist, BlueprintStudio
+                 Checklist, BlueprintStudio, PlanTable (the pinned plan)
     Tools/       Tool, FixingTool, Hammer, Screwdriver, CuttingTool, Saw, GlassCutter,
                  Trowel, Shovel, Bucket, Dispenser, WorkshopManager, WorkshopCommands,
-                 Ladder, ClimbZone, Wheelbarrow, BlueprintTablet, InspectionBell
+                 Ladder, ClimbZone, Wheelbarrow, InspectionBell
     Sorting/     SortingZone, WorldLabel
-    Round/       TeamArea, Truck, FinalTestDirector, ScoreCalculator
+    Round/       TeamArea, PileDropper, FinalTestDirector, ScoreCalculator
     Player/      PlayerInputHandler, PlayerMotor, PlayerLook, PlayerActions,
                  PlayerGrabber (the hand), PlayerInventory, CameraShake
     UI/          HudController
@@ -67,18 +67,22 @@ Namespaces follow folders: `BuildCrew.Core`, `.Kits`, `.Parts`, `.Interaction`,
 
 1. **Every object is a dynamic Rigidbody with realistic mass, all the time.**
    Parts, tools, buckets, the ladder, the wheelbarrow, pallets, the tool rack,
-   the mortar station, shards. Only the ground/bumps are static, and only the
-   truck (and the players' hand anchors) are kinematic. **Never parent a held
-   object to the camera** and never make it kinematic: holding is a joint.
+   the mortar station, the plan table, shards. Only the ground/bumps are
+   static, and only the players' hand anchors and snap anchors are kinematic.
+   **Never parent a held object to the camera.** The one exception to "always
+   dynamic": a tool held by its grip is kinematic with colliders off while in
+   hand (see rule 2); it is a normal dynamic body again when released.
 2. **Holding is a physics grab.** `Grabbable.AttachGrabber` adds a
    ConfigurableJoint at the grabbed point, connected to the grabber's kinematic
    hand body (`PlayerGrabber`). Linear drive: spring `mass * f^2`, capped at
    `grabStrength`; slerp drive capped at `grabMaxTorque`. Several grabbers =
    several joints whose forces add up. Weight classes (light / medium / heavy)
-   follow from mass vs. strength. Tools are grip items: grabbed at their grip
-   and held in a pose in front of the camera (the hand rotates, the joint
-   follows). A joint keeps the relative rotation it had when created, so to
-   turn something you rotate the anchor body, never set `targetRotation`.
+   follow from mass vs. strength. Tools are grip items held RIGIDLY
+   (`Grabbable.HeldRigidly`): kinematic, colliders off, their transform set in
+   `PlayerGrabber.LateUpdate` to the hold pose in front of the camera, so they
+   are steady. The ladder is a grip item that stays on a joint. A joint keeps
+   the relative rotation it had when created, so to turn something you rotate
+   the anchor body, never set `targetRotation`.
 3. **Every state change goes through a command.** Players and the simulation
    build a `GameCommand` (plain data: ids, numbers, vectors) and call
    `CommandBus.Execute`; managers register one handler per type and the bus
@@ -101,9 +105,10 @@ Namespaces follow folders: `BuildCrew.Core`, `.Kits`, `.Parts`, `.Interaction`,
    replaces it with FixedJoints (with `breakForce`) to the parts in the slots it
    `restsOn`, or to the world for ground slots. The building stays fully
    physical; broken joints make a part loose again (`UnsnapCommand`). A slot
-   only accepts a part when everything it `restsOn` is fixed.
-7. Tools only work in the Build state (`Tool.ToolsEnabled`); the ladder and
-   tablet always work.
+   only accepts a part when everything it `restsOn` is fixed. While a player
+   holds a part, every ready slot that fits it glows green; it snaps in when
+   its center is within `snapDistance` (any orientation; the spring turns it).
+7. Tools only work in the Build state (`Tool.ToolsEnabled`); the ladder always works.
 8. Shards, camera shake and similar effects are cosmetic and
    non-deterministic. Keep them out of game state. Joint/rigidbody poses are
    physics state (a future network transform), not command state.
@@ -140,8 +145,9 @@ Namespaces follow folders: `BuildCrew.Core`, `.Kits`, `.Parts`, `.Interaction`,
   `Awake`. Cross-object initialisation that needs another object's `Awake`
   belongs in `Start`. Command handlers register in `Awake`; commands are only
   sent from `Update` on.
-- The scene supports N `TeamArea`s (truck + pile, pallets, build site, final
-  test camera, blueprint studio, spawn); `SceneBuilder.BuildTeamArea` makes one.
+- The scene supports N `TeamArea`s (pile spot, pallets, plan table, build
+  site, final test camera, blueprint studio, spawn); `SceneBuilder.BuildTeamArea`
+  makes one.
 - Layer: `Hologram` (preferred index 31; `Layers.Hologram` falls back to 31 if
   it is unnamed). The main camera excludes it; the blueprint camera renders
   only it.
@@ -156,9 +162,9 @@ Namespaces follow folders: `BuildCrew.Core`, `.Kits`, `.Parts`, `.Interaction`,
 - Comment the non-obvious math (joint springs, wind load, packing), not the obvious.
 - Tunables go in `GameSettings` (grab strength, snap distance, saw strokes,
   mortar ratios, wind...). Kit-specific values go in the kit JSON.
-- Coordinates: team area 0 at the origin, pile around z = 6, truck parks at
-  z = 13, build site at z = -11 rotated 180° (front faces the pile), player
-  spawns at z = -1 facing +Z.
+- Coordinates: team area 0 at the origin, pile drops at z = 6, plan table at
+  (-3.8, -2.4), build site at z = -11 rotated 180° (front faces the pile),
+  player spawns at z = -1 facing +Z.
 
 ## Extending
 

@@ -50,21 +50,27 @@ Runtime-only alternative: in any empty scene, add an empty GameObject with
 | Mouse wheel | Hold distance |
 | Hold R + mouse | Rotate the held object |
 | LMB | Use the held tool |
-| RMB or Tab (hold) | Raise the blueprint tablet; 1-4 or LMB switch Front/Side/Top/Back |
+| E on the plan table | Next plan view (Front / Side / Top / Back) |
 | Esc | Free the mouse cursor (click to recapture) |
 | R (results) | Restart with a new pile |
 
 ### Building
 
-- Hold a part near its glowing ghost (≤ 30 cm, ≤ 20°): it gets pulled in by a
-  soft spring and turns yellow-outlined ("placed"). Grab it again to take it out.
+- Pick up a part: every ghost it fits (and that is ready) glows GREEN. Carry it
+  there; once its center is within 60 cm it snaps in, whatever way you hold it,
+  and the spring turns it into place. It's outlined yellow ("placed"). Grab it
+  again to take it out. The HUD tells you while carrying whether its spot isn't
+  ready yet or whether it needs cutting first.
 - Ghosts: current stage glows blue, a slot that can take a part right now is
-  brighter, the slot you're about to snap into is green, later stages are faint.
-  A slot only accepts a part once everything under it is FIXED.
+  brighter, later stages are faint. A slot only accepts a part once everything
+  under it is FIXED (e.g. posts first, then the planks nailed to them).
+- Looking at a placed part tells you how to fix it and the progress.
 - Fixing: **wood** = hammer (3 hits = 3 nails), **door / tin roof** =
   screwdriver (hold LMB, 3 screws), **stone / bricks** = trowel with fresh mortar.
-  Nails/screws come from your pockets (E on a box while holding the hammer or
-  screwdriver, or LMB while holding the box) or from a box within 2.5 m.
+  Everyone starts with 30 nails and 15 screws in their pockets. Refill: E on a
+  box while holding the hammer/screwdriver, or LMB while holding the box. With
+  empty pockets, a box within 4 m is used automatically.
+- Tools are held steady in your hand (they don't swing on a spring).
 - **Saw**: aim at a loose plank/post/beam, hold LMB and move the mouse left and
   right. The red line and the HUD show where it cuts and the two lengths; it
   snaps to lengths the building still needs. Beams use the two-person saw
@@ -82,12 +88,14 @@ Runtime-only alternative: in any empty scene, add an empty GameObject with
   unattended ladder may slip while climbed.
 - **Wheelbarrow**: grab a handle, lift, push. It tips on bumps.
 - **Pallets**: drop parts on the labeled pallets; they count what's on them.
-  The tablet checklist only counts sorted or built parts; the pile is "?".
+- **Plan table** (by the site): the target render (E: next view), the current
+  stage, the checklist and the lengths to cut. The checklist only counts sorted
+  or built parts; the pile is "?".
 
 ### Round flow
 
-1. **Briefing** (10 s): the target and stages are shown; the truck backs in.
-2. **Dump**: the bed tips, the pile slides out. The clock starts when the pile
+1. **Briefing** (10 s): the target and stages are shown.
+2. **Dump**: the pile drops onto the dirt next to the pallets. The clock starts when the pile
    has mostly settled (or 5 s after tipping).
 3. **Build**: shed 4:00, cottage 8:00. Ring the bell at the site to finish early
    (time bonus).
@@ -119,21 +127,22 @@ designs pass `Tools~/kit-gen/run.sh`, but nothing has been play-tested.
   steps before rotating the anchor).
 - **Physics stability**: tall FixedJoint chains (brick walls, chimney) may sag or
   jitter. Raise `buildingSolverIterations`, the break forces, or lower masses.
-  The pile (52 parts shed, ~175 cottage) spawns in one frame on the truck bed;
-  watch for parts popping out on spawn (packing gap is 3 cm).
+  The pile (52 parts shed, ~175 cottage) spawns in one frame as a stacked
+  heap that tumbles down; watch for parts popping on spawn (gaps 6/12 cm,
+  `PileDropper`).
 - **Snap spring**: the anchor is raised by the static sag `g / snapFrequency^2`
-  (0.2 m at 7 rad/s). If placed parts float or sink, tune `snapFrequency` /
+  (7 cm at 12 rad/s). If placed parts float or sink, tune `snapFrequency` /
   `snapForceWeights`.
 - **Glass**: breaking uses relative speed AND velocity change; panes might shatter
   too easily (being nailed, snapped) or never. Tune `glassBreakSpeed`,
   `glassBreakDeltaV`.
-- **Truck dump**: parts might stick in the bed or fly. Tune `Truck.tipAngle`,
-  hold time and the bed friction (default material).
 - **Hold poses**: tool grip points and hold poses in `SceneBuilder.Build<Tool>`
-  were guessed (hammer swing axis, saw/shovel orientation, tablet raise pose).
+  were guessed (hammer swing axis, saw/shovel orientation). Tools are held
+  rigidly now, so a wrong pose shows immediately: fix it in `ConfigureGrip`.
 - **Climbing onto roofs**: the cottage roof is 43°; standing on it relies on the
   CharacterController slope limit (50°).
-- **Tablet readability**: lots of small world-space text (checklist at 11 px/mm).
+- **Plan table readability**: world-space text on the board; the checklist
+  auto-shrinks (14-30 mm) when long (cottage).
 - **Wind**: `F = ½ ρ v² Cd A` per part (+ uplift on flat things), capped at 25 g.
   Might be too weak/strong for the joint strengths.
 - **Performance**: ~175 rigidbodies + combined meshes for the cottage; fine on
@@ -151,8 +160,9 @@ designs pass `Tools~/kit-gen/run.sh`, but nothing has been play-tested.
 | `grabFrequency` / `grabDampingRatio` | 14 rad/s / 0.75 | How snappy/bouncy held things are. |
 | `grabMaxTorque` | 110 N m | How much long things sag when held off-center. |
 | `lightMaxMass` / `mediumMaxMass` | 10 / 40 kg | Weight class thresholds (HUD + walk speed). |
-| `snapDistance` / `snapAngle` | 0.3 m / 20° | When a held part gets pulled into its slot. |
-| `snapFrequency` | 7 rad/s | Softness of a placed (unfixed) part. |
+| `snapDistance` / `snapAngle` | 0.6 m / 180° (any) | When a held part gets pulled into its slot. |
+| `snapFrequency` | 12 rad/s | Stiffness of a placed (unfixed) part. |
+| `startNails` / `startScrews` | 30 / 15 | Pocket contents at round start. |
 | `nail/screw/mortarBreakForce` | 6000/8000/12000 N | How strong fixed joints are. |
 | `buildingSolverIterations` | 24 | Stability of the jointed building. |
 | `plank/post/beamStrokes`, `sawStrokePixels` | 6/10/14, 45 px | Sawing effort. |
@@ -162,5 +172,5 @@ designs pass `Tools~/kit-gen/run.sh`, but nothing has been play-tested.
 | `settleFraction`, `settleTimeout` | 0.85, 5 s | When the clock starts after the dump. |
 | `sparePercent`, `wrongLengthDecoys` | 15 %, 3 | Pile generation. |
 
-Also see the serialized fields on `Truck` (tip angle, timings) and `Ladder`
-(lean angle), and the hold poses in `SceneBuilder`.
+Also see `PileDropper` (stack footprint, gaps), `Ladder` (lean angle), and
+the hold poses in `SceneBuilder`.
