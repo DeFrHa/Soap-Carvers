@@ -1,139 +1,166 @@
-# Soap Carvers – Setup
+# Build Crew – Setup
 
-This repo currently holds only `Assets/`, plus docs and tools. It does not
-contain `ProjectSettings/` or `Packages/` yet, so the first time you need to
-pair it with a fresh URP project.
+## 1. Open the project
 
-## 1. First-time setup (turn the repo into a Unity project)
+The repo is a complete Unity project (`Assets/`, `Packages/`, `ProjectSettings/`).
 
-1. In **Unity Hub**, choose **New project**, editor **6000.3.6f1**, template
-   **Universal 3D** (URP). Create it anywhere, e.g. `SoapCarversTemplate`.
-2. Close Unity. From the new project, copy these into the root of this repo:
-   - `Packages/`
-   - `ProjectSettings/`
-   - `Assets/Settings/` (the URP pipeline/renderer assets the template made)
+1. **Unity Hub → Add → Add project from disk**, pick this repo folder, open
+   it with **6000.3.6f1**.
+2. Check **Window → Package Manager → In Project**: **Input System**,
+   **Universal RP** and **Unity UI** (`com.unity.ugui`) are installed.
+3. **Edit → Project Settings → Player → Other Settings → Active Input
+   Handling** must be **Input System Package (New)** or **Both**.
 
-   Do not copy the template's sample scene or `TutorialInfo`.
-3. Unity Hub: choose **Add**, then **Add project from disk**, and pick this
-   repo folder. Open it with 6000.3.6f1.
-4. Check the packages in **Window → Package Manager → In Project**:
-   - **Input System** is installed. The Unity 6 URP template includes it;
-     otherwise install it.
-   - **Universal RP** is installed.
-   - **Unity UI** (`com.unity.ugui`) is installed. It is part of the template.
-5. Go to **Edit → Project Settings → Player → Other Settings → Active Input
-   Handling** and set it to **Input System Package (New)** or **Both**. Unity
-   restarts if you change it.
-6. Commit `Packages/` and `ProjectSettings/` (and `Assets/Settings/`) so the
-   next clone opens directly.
-
-Quick alternative for a throwaway test: create the URP project and copy this
-repo's `Assets/Scripts` folder into its `Assets/`.
+The old Soap Carvers scene/materials were removed. If an old
+`Assets/Settings/GameSettings.asset` is still around in your local copy,
+delete it so the new defaults are used.
 
 ## 2. Build and play
 
-1. Run the menu **Soap Carvers → Create Playable Scene**. It:
+1. **Build Crew → Create Playable Scene**. It:
    - adds a `Hologram` layer (index 31 if free),
+   - writes `Assets/StreamingAssets/Kits/garden_shed.json` and `cottage.json`
+     if they are missing (they are also committed),
    - generates `Assets/Materials/*.mat` and `Assets/Settings/GameSettings.asset`,
-   - builds and saves `Assets/Scenes/SoapCarvers.unity` and adds it to Build
-     Settings.
-2. Press **Play**. Click the Game view to capture the mouse.
+   - builds and saves `Assets/Scenes/BuildCrew.unity` and adds it to Build Settings.
+2. Pick the kit: select **GameManager** in the hierarchy → **Kit** dropdown
+   (**Garden Shed** default, or **Cottage**). For a community kit, put its JSON in
+   `StreamingAssets/Kits` and type the file name into **Custom Kit File**.
+3. Press **Play**. Click the Game view to capture the mouse.
+
+Other menu items:
+- **Build Crew → Generate Kit JSONs** rewrites the two built-in kit files
+  from `KitDesigns.cs` (do this after changing the designs).
+- **Build Crew → Open Playable Scene**.
 
 Runtime-only alternative: in any empty scene, add an empty GameObject with
-the **GameBootstrap** component and press Play. It builds everything in code.
-
-To tweak numbers (timer, block/voxel size, tool radii, debris), select
-`Assets/Settings/GameSettings.asset`. Re-running the menu keeps this asset,
-so after updating the code, new defaults (for example `voxelSize` 0.125)
-don't apply to an existing asset. Delete it, or edit it, to pick them up.
-To try the easy target, set **Target Shape Name** to `Mushroom`.
+**GameBootstrap** and press Play. It builds everything in code.
 
 ## 3. Controls
 
 | Input | Action |
 |---|---|
-| WASD / arrows | Move |
+| WASD / arrows | Move (slower while carrying medium/heavy things) |
 | Mouse | Look |
 | Shift | Sprint |
 | Space | Jump (also hops off a ladder) |
-| E | Pick up; press the workbench button; toggle scaffold wheel brakes. While carrying the ladder: place it. While holding dynamite and looking at soap: stick it on |
-| Q | Drop held item |
-| G | Throw held item |
-| LMB | Use tool (hold for knife, chainsaw, pickaxe repeat). Dynamite: light the fuse |
-| RMB or Tab (hold) | Raise the blueprint tablet |
-| 1 / 2 / 3 / 4 | Tablet view: Front / Side / Top / Back (LMB cycles while raised) |
-| Ladder / scaffold | Walk into the ladder side holding W. Look up to climb up, look down to climb down. At the top you hop off onto the ledge or deck |
-| Scaffold | Look at it and press E to release the brakes, then walk into it to push it. Press E again to lock it before climbing |
-| R | Restart (results screen) |
+| E | Grab what you look at (at that point) / release. On a station, nail box or bell: use it |
+| Q | Release |
+| G | Throw (an impulse: light things fly, heavy things barely move) |
+| Mouse wheel | Hold distance |
+| Hold R + mouse | Rotate the held object |
+| LMB | Use the held tool |
+| RMB or Tab (hold) | Raise the blueprint tablet; 1-4 or LMB switch Front/Side/Top/Back |
 | Esc | Free the mouse cursor (click to recapture) |
+| R (results) | Restart with a new pile |
+
+### Building
+
+- Hold a part near its glowing ghost (≤ 30 cm, ≤ 20°): it gets pulled in by a
+  soft spring and turns yellow-outlined ("placed"). Grab it again to take it out.
+- Ghosts: current stage glows blue, a slot that can take a part right now is
+  brighter, the slot you're about to snap into is green, later stages are faint.
+  A slot only accepts a part once everything under it is FIXED.
+- Fixing: **wood** = hammer (3 hits = 3 nails), **door / tin roof** =
+  screwdriver (hold LMB, 3 screws), **stone / bricks** = trowel with fresh mortar.
+  Nails/screws come from your pockets (E on a box while holding the hammer or
+  screwdriver, or LMB while holding the box) or from a box within 2.5 m.
+- **Saw**: aim at a loose plank/post/beam, hold LMB and move the mouse left and
+  right. The red line and the HUD show where it cuts and the two lengths; it
+  snaps to lengths the building still needs. Beams use the two-person saw
+  (alone: half speed).
+- **Glass cutter**: aim at a pane, hold LMB and drag slowly. Too fast = crack.
+  Panes shatter if dropped or hit hard (only once the build timer runs).
+- **Mortar**: put a bucket next to the station (or hold it), E on cement /
+  sand / tap to add 1 unit each: recipe **1 cement : 3 sand : 1 water**. Stir
+  with the shovel (aim at the bucket, hold LMB, move the mouse in circles).
+  Too wet = useless soup; too dry won't mix. Fresh for 60 s, then it sets. Turn
+  a bucket upside down to tip it out. Trowel: LMB on the bucket to scoop
+  (3 dabs), LMB on a placed stone/brick stack to mortar it.
+- **Ladder**: carry it, LMB to lean it against the wall you look at, walk into
+  it and look up/down to climb. Grab a standing ladder to hold it steady; an
+  unattended ladder may slip while climbed.
+- **Wheelbarrow**: grab a handle, lift, push. It tips on bumps.
+- **Pallets**: drop parts on the labeled pallets; they count what's on them.
+  The tablet checklist only counts sorted or built parts; the pile is "?".
 
 ### Round flow
 
-1. **Ready**: the clock (5:00) starts on the first carve, or when you press the
-   red button on the workbench.
-2. **Carving**: once the timer hits 0:00, tools stop working. Pressing the red
-   button during the round ends it early.
-3. **Scanning**: a glowing plane sweeps down over the block.
-4. **Results**: match %, rank title, raw IoU, how much of the target is still
-   intact, and how much excess soap is left. Press R, the on-screen button or
-   the red button to play again.
+1. **Briefing** (10 s): the target and stages are shown; the truck backs in.
+2. **Dump**: the bed tips, the pile slides out. The clock starts when the pile
+   has mostly settled (or 5 s after tipping).
+3. **Build**: shed 4:00, cottage 8:00. Ring the bell at the site to finish early
+   (time bonus).
+4. **Final test** (10 s, fixed camera): wind (cottage: wind + rain). Placed but
+   unfixed parts lose their spring; badly fixed parts can break loose.
+5. **Results**: score = fixed slots / all − parts lost in the test + time bonus;
+   rank title. R or the button restarts with a new pile.
 
 ## 4. Layers and tags
 
 | Name | Kind | Created by |
 |---|---|---|
-| `Hologram` | Layer (prefers index 31) | the menu item, automatically |
+| `Hologram` | Layer (prefers index 31) | the menu item, automatically (already in TagManager) |
 | `Player`, `MainCamera` | Tags | built into Unity |
 
-If the menu cannot add the layer (all user slots are taken), name any free
-layer `Hologram` by hand. If no layer is named `Hologram`, the code falls back
-to raw layer index 31, which works but won't show a name in the Inspector.
+## 5. Known risks (nothing here has run in the editor yet)
 
-## 5. Known risks and things that need tuning
+All code was written without access to Unity. It compiles cleanly with
+`Tools~/compile-check/run.sh` (Unity 2021.3 reference DLLs + shims) and the kit
+designs pass `Tools~/kit-gen/run.sh`, but nothing has been play-tested.
 
-This code was written without access to the Unity editor. It compiles
-cleanly with `Tools~/compile-check/run.sh`, which checks against Unity 2021.3
-reference DLLs, but nothing has been run or play-tested yet. Expect to tune:
+- **Unity 6 API drift**: possible obsolete warnings (`FindObjectsByType(...SortMode)`,
+  `Physics.*NonAlloc`). Should be warnings; if one is an error in 6.3 it's a one-liner.
+- **Joint target rotation**: the grab and snap joints rely on "a ConfigurableJoint
+  keeps the relative rotation it had when created" and rotate their kinematic
+  anchor instead of setting `targetRotation`. If tools don't swing into their
+  hold pose, or snapped parts don't turn into place, look at
+  `PlayerGrabber.FixedUpdate` / `BuildSlot.FixedUpdate` (both wait 2 physics
+  steps before rotating the anchor).
+- **Physics stability**: tall FixedJoint chains (brick walls, chimney) may sag or
+  jitter. Raise `buildingSolverIterations`, the break forces, or lower masses.
+  The pile (52 parts shed, ~175 cottage) spawns in one frame on the truck bed;
+  watch for parts popping out on spawn (packing gap is 3 cm).
+- **Snap spring**: the anchor is raised by the static sag `g / snapFrequency^2`
+  (0.2 m at 7 rad/s). If placed parts float or sink, tune `snapFrequency` /
+  `snapForceWeights`.
+- **Glass**: breaking uses relative speed AND velocity change; panes might shatter
+  too easily (being nailed, snapped) or never. Tune `glassBreakSpeed`,
+  `glassBreakDeltaV`.
+- **Truck dump**: parts might stick in the bed or fly. Tune `Truck.tipAngle`,
+  hold time and the bed friction (default material).
+- **Hold poses**: tool grip points and hold poses in `SceneBuilder.Build<Tool>`
+  were guessed (hammer swing axis, saw/shovel orientation, tablet raise pose).
+- **Climbing onto roofs**: the cottage roof is 43°; standing on it relies on the
+  CharacterController slope limit (50°).
+- **Tablet readability**: lots of small world-space text (checklist at 11 px/mm).
+- **Wind**: `F = ½ ρ v² Cd A` per part (+ uplift on flat things), capped at 25 g.
+  Might be too weak/strong for the joint strengths.
+- **Performance**: ~175 rigidbodies + combined meshes for the cottage; fine on
+  desktop, untested.
+- **StreamingAssets** are read with `File.ReadAllText` (desktop only; Android/WebGL
+  would need `UnityWebRequest`).
+- **Input System UI module**: the builder calls `AssignDefaultActions()`. If the
+  results button doesn't respond, use R.
 
-- **Compile drift in 6000.3.** Possible obsolete warnings, for example
-  `FindObjectsByType(FindObjectsSortMode)` or `Physics.RaycastNonAlloc`. They
-  should be warnings, not errors. If a call turned into an error in 6.3, it is
-  a one-line fix.
-- **Feel.** Movement speeds, gravity, jump, mouse sensitivity, the item hold
-  poses (`Configure(...)` calls in `SceneBuilder`), the pickaxe swing curve,
-  chainsaw jitter, and dynamite knockback (`GameSettings.dynamiteKnockback`).
-- **Ladder.** It is a dynamic rigidbody, 12 m long, with grippy rails, and is
-  placed leaning at 16°. If there's nothing to lean on, it falls. Climbers add
-  25 kg at their position (`ClimbZone.climberMass`). Tune friction
-  (`PhysicsMaterials.Grippy`), the lean angle and the mass if it slips or
-  jitters. The scene starts with it leaning against the soap.
-- **Scaffolds.** Three rolling towers (4.5 m, 8.5 m and 12.5 m decks) with
-  sphere "caster" wheels. The wheels are frictionless with brakes off and
-  grippy with brakes on. The center of mass is set very low so they don't
-  tip; dynamite will still launch them. Check the push force and speed
-  (`Scaffold.pushForce`, `maxPushSpeed`), the climb-zone fit and the step-off
-  onto the deck.
-- **Dynamite sticking.** A free stick turns kinematic on its first touch
-  with soap. It checks every 0.25 s whether soap is still under it, and falls
-  if not.
-- **Performance.** At 0.125 m voxels the grid is 129³ points, about 8.6 MB
-  each for the soap and the target, in 512 chunks. Startup meshes every chunk
-  and voxelizes the target (narrow-band, so only near the surface). Expect
-  roughly a second. A dynamite blast dirties about 100 chunks; they rebuild at
-  most `maxChunkRebuildsPerFrame` (24) per frame. If carving feels slow, raise
-  `voxelSize` to 0.16–0.25, or move meshing to Burst/Jobs.
-- **Floating soap.** Islands cut loose from the block stay floating; they
-  don't fall.
-- **Materials.** The URP Lit/Unlit properties are set from code. If the scan
-  plane renders opaque, set its material's Surface Type to Transparent in the
-  inspector. With **GameBootstrap only** (no generated scene) in a player
-  build, URP shaders can be stripped, giving pink objects. Use the generated
-  scene, or add the shaders to *Always Included Shaders*.
-- **Tablet readability.** RenderTexture resolution (512²), hologram color, and
-  the text overlay layout on the tablet.
-- **Scoring.** It samples grid points (density > 0). An untouched block scores
-  0%. Carving everything away also scores 0%, because the score is clamped.
-- **Input System UI module.** The builder calls `AssignDefaultActions()`. If
-  the results-screen button doesn't respond to clicks, use R.
-- **Determinism.** The soap is deterministic given the carve log on the same
-  platform. Debris uses `UnityEngine.Random` and is cosmetic only.
+## 6. What to tune first (`Assets/Settings/GameSettings.asset`)
+
+| Setting | Default | What it does |
+|---|---|---|
+| `grabStrength` | 420 N | Max force per player. Weight above it can't be lifted alone. |
+| `grabFrequency` / `grabDampingRatio` | 14 rad/s / 0.75 | How snappy/bouncy held things are. |
+| `grabMaxTorque` | 110 N m | How much long things sag when held off-center. |
+| `lightMaxMass` / `mediumMaxMass` | 10 / 40 kg | Weight class thresholds (HUD + walk speed). |
+| `snapDistance` / `snapAngle` | 0.3 m / 20° | When a held part gets pulled into its slot. |
+| `snapFrequency` | 7 rad/s | Softness of a placed (unfixed) part. |
+| `nail/screw/mortarBreakForce` | 6000/8000/12000 N | How strong fixed joints are. |
+| `buildingSolverIterations` | 24 | Stability of the jointed building. |
+| `plank/post/beamStrokes`, `sawStrokePixels` | 6/10/14, 45 px | Sawing effort. |
+| `glassScorePixels`, `glassCrackSpeed` | 900 px, 2600 px/s | Glass cutting effort and risk. |
+| `mortarFreshSeconds`, `waterRatioMin/Max` | 60 s, 0.18–0.34 | Mortar window and recipe tolerance. |
+| `windSpeed` / `windGust` | 13 / 6 m/s | Final test strength. |
+| `settleFraction`, `settleTimeout` | 0.85, 5 s | When the clock starts after the dump. |
+| `sparePercent`, `wrongLengthDecoys` | 15 %, 3 | Pile generation. |
+
+Also see the serialized fields on `Truck` (tip angle, timings) and `Ladder`
+(lean angle), and the hold poses in `SceneBuilder`.
