@@ -1,12 +1,12 @@
 using UnityEngine;
 
-namespace SoapCarvers.Player
+namespace BuildCrew.Player
 {
     /// <summary>
     /// Sits on the camera (child of the look pivot) and offsets it with Perlin
     /// noise. Two inputs:
-    ///   Trauma - one-shot hits (pickaxe, dynamite). Decays; shake ~ trauma^2.
-    ///   Jitter - continuous buzz (chainsaw). Must be re-added every frame.
+    ///   Trauma - one-shot hits (hammer blows, bonks). Decays; shake ~ trauma^2.
+    ///   Jitter - continuous buzz (sawing). Must be re-added every frame.
     /// </summary>
     public class CameraShake : MonoBehaviour
     {

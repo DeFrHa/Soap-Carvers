@@ -1,11 +1,14 @@
 using UnityEngine;
 
-namespace SoapCarvers.Player
+namespace BuildCrew.Player
 {
     /// <summary>
     /// Mouse look: yaw rotates the body, pitch rotates the camera pivot.
     /// Also adds the "wobbly" head bob and a little roll when strafing.
+    /// Mouse look pauses while PlayerActions uses the mouse for something else
+    /// (R-rotating a held object, sawing, stirring).
     /// </summary>
+    [DefaultExecutionOrder(10)]
     public class PlayerLook : MonoBehaviour
     {
         [SerializeField] Transform cameraPivot;
@@ -16,6 +19,7 @@ namespace SoapCarvers.Player
 
         PlayerInputHandler _input;
         PlayerMotor _motor;
+        PlayerActions _actions;
         float _yaw, _pitch, _roll, _bobPhase;
         Vector3 _pivotBase;
 
@@ -33,6 +37,7 @@ namespace SoapCarvers.Player
         {
             _input = GetComponent<PlayerInputHandler>();
             _motor = GetComponent<PlayerMotor>();
+            _actions = GetComponent<PlayerActions>();
             _yaw = transform.eulerAngles.y;
             if (cameraPivot != null) _pivotBase = cameraPivot.localPosition;
         }
@@ -46,7 +51,8 @@ namespace SoapCarvers.Player
 
         void Update()
         {
-            if (_input != null && Cursor.lockState == CursorLockMode.Locked)
+            bool suppressed = _actions != null && _actions.SuppressLook;
+            if (_input != null && Cursor.lockState == CursorLockMode.Locked && !suppressed)
             {
                 Vector2 d = _input.Look * sensitivity;
                 _yaw += d.x;

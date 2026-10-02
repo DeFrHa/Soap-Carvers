@@ -1,169 +1,159 @@
-using SoapCarvers.Core;
-using SoapCarvers.Targets;
-using SoapCarvers.Tools;
+using BuildCrew.Core;
+using BuildCrew.Interaction;
+using BuildCrew.Parts;
+using BuildCrew.Tools;
 using UnityEngine;
 
-namespace SoapCarvers.Player
+namespace BuildCrew.Player
 {
     /// <summary>
-    /// Turns input into actions. Looks at what the crosshair hits, builds the
-    /// interaction prompt, and sends ItemCommands to the ItemManager (pick up,
-    /// drop, throw, place) or forwards use to the held Tool.
-    /// Implements IItemHolder: this player's hand.
+    /// Turns this player's input into commands. Looks at what the crosshair
+    /// hits, builds the HUD prompt, and sends Grab / Release commands to the
+    /// CommandBus or forwards LMB/mouse to the held Tool (which sends its own
+    /// commands). Never changes game state directly.
     /// </summary>
-    [RequireComponent(typeof(PlayerInputHandler))]
-    public class PlayerActions : MonoBehaviour, IItemHolder
+    [RequireComponent(typeof(PlayerInputHandler), typeof(PlayerGrabber))]
+    public class PlayerActions : MonoBehaviour
     {
-        [SerializeField] int playerId = 1;
-        [SerializeField] Transform aim;       // the camera
-        [SerializeField] Transform holdPoint; // child of the camera
-        [SerializeField] CameraShake shake;
-        [SerializeField] ItemManager items;
-        [SerializeField] GameManager game;
-
         PlayerInputHandler _input;
-        PlayerMotor _motor;
-        float _reach = 3f;
-        float _throwSpeed = 12f;
-
-        // --- IItemHolder ---
-        public int PlayerId => playerId;
-        public Transform HoldPoint => holdPoint;
-        public Transform AimTransform => aim;
-        public Transform Root => transform;
-        public CameraShake Shake => shake;
-        public Vector3 Velocity => _motor != null ? _motor.Velocity : Vector3.zero;
-        public Holdable HeldItem { get; private set; }
-        public void SetHeldItem(Holdable item) => HeldItem = item;
+        PlayerGrabber _grabber;
+        GameSettings _settings;
 
         // --- for the HUD ---
         /// <summary>What pressing E would do right now, or null.</summary>
         public string CurrentPrompt { get; private set; }
-        public string HeldItemName => HeldItem != null ? HeldItem.DisplayName : null;
-        public string HeldItemHint => HeldItem != null ? HeldItem.HeldHint : null;
+        /// <summary>Name/size/weight of what the crosshair is on.</summary>
+        public string LookInfo { get; private set; }
+        public Grabbable Held => _grabber != null ? _grabber.Grabbed : null;
+        public string HeldInfo => Held != null ? Held.LookInfo : null;
+        public string HeldHint => Held != null ? Held.HeldHint : null;
+        public string ToolStatus => Held is Tool t && t.PrimaryGrabber == (IGrabber)_grabber ? t.StatusText : null;
+        public PlayerInventory Inventory => _grabber != null ? _grabber.Inventory : null;
+        public PlayerGrabber Grabber => _grabber;
 
-        public void Configure(int id, Transform aimTransform, Transform hold, CameraShake cameraShake,
-            ItemManager itemManager, GameManager gameManager)
-        {
-            playerId = id;
-            aim = aimTransform;
-            holdPoint = hold;
-            shake = cameraShake;
-            items = itemManager;
-            game = gameManager;
-        }
+        /// <summary>True while the mouse drives something other than the view (PlayerLook reads it).</summary>
+        public bool SuppressLook { get; private set; }
 
         void Awake()
         {
             _input = GetComponent<PlayerInputHandler>();
-            _motor = GetComponent<PlayerMotor>();
-            if (items == null) items = FindFirstObjectByType<ItemManager>();
-            if (game == null) game = FindFirstObjectByType<GameManager>();
-            if (game != null && game.Settings != null)
-            {
-                _reach = game.Settings.interactReach;
-                _throwSpeed = game.Settings.throwSpeed;
-            }
+            _grabber = GetComponent<PlayerGrabber>();
+            _settings = World.Settings;
         }
 
         void Start()
         {
-            if (items != null) items.RegisterHolder(this);
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
 
-        void OnDestroy()
-        {
-            if (items != null) items.UnregisterHolder(this);
-        }
-
         void Update()
         {
-            UpdateCursor();
+            GameManager game = World.Game;
+            GameState state = game != null ? game.State : GameState.Build;
+            UpdateCursor(state);
             bool cursorLocked = Cursor.lockState == CursorLockMode.Locked;
+            bool frozen = state == GameState.FinalTest;
+            SuppressLook = false;
+            Grabbable held = _grabber.Grabbed;
+            Transform aim = _grabber.Aim;
 
-            // ---- What are we looking at? ----
-            Holdable lookItem = null;
+            if (held != null && (_grabber.LeashBroken || frozen)) Release(false);
+            held = _grabber.Grabbed;
+
+            // ---- What are we looking at? (ignore ourselves and what we hold)
+            Grabbable lookGrabbable = null;
             IInteractable lookInteractable = null;
-            if (aim != null && PhysicsUtil.Raycast(aim.position, aim.forward, _reach, transform,
-                    QueryTriggerInteraction.Collide, out RaycastHit hit))
+            RaycastHit hit = default;
+            if (!frozen && aim != null && PhysicsUtil.Raycast(aim.position, aim.forward, _settings.interactReach, transform,
+                    QueryTriggerInteraction.Ignore, out hit, held != null ? held.transform : null))
             {
-                lookItem = hit.collider.GetComponentInParent<Holdable>();
-                if (lookItem != null && (lookItem.IsHeld || !lookItem.CanPickUp)) lookItem = null;
-                if (lookItem == null) lookInteractable = hit.collider.GetComponentInParent<IInteractable>();
+                lookInteractable = hit.collider.GetComponentInParent<IInteractable>();
+                lookGrabbable = hit.rigidbody != null ? hit.rigidbody.GetComponent<Grabbable>() : null;
             }
+            string interactPrompt = lookInteractable?.GetPrompt(_grabber);
+            LookInfo = lookGrabbable != null ? lookGrabbable.LookInfo : null;
 
-            // Placement (lean the ladder, stick dynamite on soap) wins over picking things up.
-            Vector3 placePos = default;
-            Quaternion placeRot = Quaternion.identity;
-            string placePrompt = null;
-            bool canPlace = HeldItem != null && HeldItem.CanBePlaced &&
-                            HeldItem.TryGetPlacement(this, out placePos, out placeRot, out placePrompt);
-
-            if (canPlace) CurrentPrompt = placePrompt;
-            else if (lookItem != null) CurrentPrompt = lookItem.PickupPrompt;
-            else if (lookInteractable != null) CurrentPrompt = lookInteractable.GetPrompt(this);
+            if (frozen) CurrentPrompt = null;
+            else if (interactPrompt != null) CurrentPrompt = interactPrompt;
+            else if (held == null && lookGrabbable != null && lookGrabbable.CanBeGrabbed) CurrentPrompt = lookGrabbable.GrabPrompt;
             else CurrentPrompt = null;
 
-            // ---- E: interact ----
-            if (_input.InteractPressed && items != null)
+            if (!frozen)
             {
-                if (canPlace) Place(HeldItem, placePos, placeRot);
-                else if (lookItem != null) Send(ItemCommandType.PickUp, lookItem);
-                else if (lookInteractable != null) lookInteractable.Interact(this);
+                // ---- E: interact > release > grab
+                if (_input.InteractPressed)
+                {
+                    if (interactPrompt != null) lookInteractable.Interact(_grabber);
+                    else if (held != null) Release(false);
+                    else if (lookGrabbable != null && lookGrabbable.CanBeGrabbed)
+                        Send(new GrabCommand { EntityId = lookGrabbable.EntityId, LocalPoint = lookGrabbable.transform.InverseTransformPoint(hit.point) });
+                }
+                else if (held != null && _input.ReleasePressed) Release(false);
+                else if (held != null && _input.ThrowPressed) Release(true);
             }
 
-            // ---- Q / G: drop / throw ----
-            if (HeldItem != null && items != null)
+            held = _grabber.Grabbed;
+            if (held != null && cursorLocked && !frozen)
             {
-                if (_input.DropPressed)
-                    Send(ItemCommandType.Drop, HeldItem, Velocity);
-                else if (_input.ThrowPressed)
-                    Send(ItemCommandType.Throw, HeldItem, aim.forward * _throwSpeed + Vector3.up * 1.5f + Velocity);
+                float scroll = _input.Scroll;
+                if (Mathf.Abs(scroll) > 0.01f) _grabber.AdjustDistance(Mathf.Sign(scroll));
+
+                bool rotating = _input.RotateHeld && !_grabber.HoldsWithGrip && state != GameState.Results;
+                if (rotating)
+                {
+                    _grabber.Rotate(_input.Look);
+                    SuppressLook = true;
+                }
+
+                if (held is Tool tool && tool.PrimaryGrabber == (IGrabber)_grabber)
+                {
+                    tool.Tick(_grabber, new ToolInput
+                    {
+                        PrimaryHeld = _input.PrimaryHeld,
+                        PrimaryPressed = _input.PrimaryPressed,
+                        SecondaryHeld = _input.SecondaryHeld,
+                        MouseDelta = _input.Look,
+                        ViewKey = _input.ViewKeyPressed,
+                        DeltaTime = Time.deltaTime,
+                    });
+                    if (tool.CapturesMouse) SuppressLook = true;
+                }
+                else if (held is FixingBox box && _input.PrimaryPressed && box.Count > 0)
+                {
+                    Send(new TakeFixingsCommand { BoxId = box.EntityId });
+                }
+            }
+            else if (held is Tool idleTool && idleTool.PrimaryGrabber == (IGrabber)_grabber)
+            {
+                idleTool.Tick(_grabber, new ToolInput { DeltaTime = Time.deltaTime, ViewKey = -1 });
             }
 
-            // ---- Held item use ----
-            if (HeldItem is BlueprintTablet tablet)
-            {
-                tablet.SetRaised(_input.RaiseHeld);
-                int view = _input.ViewKeyPressed;
-                if (view >= 0) tablet.SetView((BlueprintView)view);
-                if (tablet.IsRaised && cursorLocked && _input.PrimaryPressed) tablet.CycleView();
-            }
-            else if (HeldItem is Tool tool)
-            {
-                if (cursorLocked && _input.PrimaryHeld) tool.StartUse();
-                else tool.StopUse();
-            }
-
-            // ---- R: restart from the results screen ----
-            if (_input.RestartPressed && game != null && game.State == GameState.Results)
+            // ---- R: restart from the results screen
+            if (_input.RestartPressed && game != null && state == GameState.Results)
                 game.RequestRestart();
         }
 
-        void Place(Holdable item, Vector3 pos, Quaternion rot)
+        void Release(bool throwIt)
         {
-            items.Execute(new ItemCommand
-            {
-                Type = ItemCommandType.Place, PlayerId = playerId, ItemId = item.ItemId,
-                Position = pos, Rotation = rot,
-            });
+            Vector3 dir = _grabber.Aim != null ? _grabber.Aim.forward + Vector3.up * 0.15f : transform.forward;
+            Send(new ReleaseCommand { Throw = throwIt, Direction = dir });
         }
 
-        void Send(ItemCommandType type, Holdable item, Vector3 velocity = default)
+        void Send(GameCommand cmd)
         {
-            items.Execute(new ItemCommand { Type = type, PlayerId = playerId, ItemId = item.ItemId, Velocity = velocity });
+            cmd.PlayerId = _grabber.PlayerId;
+            CommandBus bus = World.Bus;
+            if (bus != null) bus.Execute(cmd);
         }
 
         /// <summary>
         /// Lock the cursor for mouse look; free it on the results screen (for the
         /// restart button) or when Escape is pressed. Click to re-lock.
         /// </summary>
-        void UpdateCursor()
+        void UpdateCursor(GameState state)
         {
-            bool results = game != null && game.State == GameState.Results;
-            if (results || _input.UnlockCursorPressed)
+            if (state == GameState.Results || _input.UnlockCursorPressed)
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;

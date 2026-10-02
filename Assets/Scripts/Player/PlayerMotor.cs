@@ -1,13 +1,15 @@
-using SoapCarvers.Tools;
+using BuildCrew.Core;
+using BuildCrew.Tools;
 using UnityEngine;
 
-namespace SoapCarvers.Player
+namespace BuildCrew.Player
 {
     /// <summary>
     /// CharacterController movement: WASD, Shift sprint, Space jump, a bit floaty
-    /// (low gravity, some air control), pushable by explosions, climbing (overlap
-    /// a ClimbZone of a ladder or scaffold, press forward, look up to climb up /
-    /// down to climb down), and shoving IPushables (scaffolds) by walking into them.
+    /// (low gravity, some air control), climbing (overlap a ladder's ClimbZone,
+    /// press forward, look up to climb up / down to climb down). Carrying medium
+    /// or heavy things slows you down (PlayerGrabber.CarrySpeedFactor). Frozen
+    /// during the final test.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class PlayerMotor : MonoBehaviour
@@ -27,12 +29,13 @@ namespace SoapCarvers.Player
         [Header("Misc")]
         [SerializeField] float pushPower = 1.5f;
         [Tooltip("Rigidbodies heavier than this aren't nudged by walking into them.")]
-        [SerializeField] float lightObjectMass = 3f;
+        [SerializeField] float lightObjectMass = 4f;
         [SerializeField] float impulseDamping = 2.5f;
 
         CharacterController _cc;
         PlayerInputHandler _input;
         PlayerLook _look;
+        PlayerGrabber _grabber;
         Vector3 _planarVelocity;
         float _verticalVelocity;
         Vector3 _impulse; // decaying external horizontal velocity (explosions)
@@ -46,18 +49,21 @@ namespace SoapCarvers.Player
             _cc = GetComponent<CharacterController>();
             _input = GetComponent<PlayerInputHandler>();
             _look = GetComponent<PlayerLook>();
+            _grabber = GetComponent<PlayerGrabber>();
         }
 
         void Update()
         {
             float dt = Time.deltaTime;
-            Vector2 move = _input != null ? _input.Move : Vector2.zero;
+            GameManager game = World.Game;
+            bool frozen = game != null && game.State == GameState.FinalTest;
+            Vector2 move = _input != null && !frozen ? _input.Move : Vector2.zero;
             bool sprint = _input != null && _input.SprintHeld;
-            bool jump = _input != null && _input.JumpPressed;
+            bool jump = _input != null && !frozen && _input.JumpPressed;
 
             Vector3 wish = transform.right * move.x + transform.forward * move.y;
             if (wish.sqrMagnitude > 1f) wish.Normalize();
-            float speed = walkSpeed * (sprint ? sprintMultiplier : 1f);
+            float speed = walkSpeed * (sprint ? sprintMultiplier : 1f) * (_grabber != null ? _grabber.CarrySpeedFactor : 1f);
 
             ClimbZone zone = FindClimbZone();
             float pitch = _look != null ? _look.Pitch : 0f;
@@ -117,12 +123,15 @@ namespace SoapCarvers.Player
             {
                 if (!c.isTrigger) continue;
                 ClimbZone z = c.GetComponent<ClimbZone>();
-                if (z != null && z.IsClimbable) return z;
+                if (z == null || !z.IsClimbable) continue;
+                // Can't climb the ladder you're holding yourself (a helper steadying it is fine).
+                if (_grabber != null && z.Owner != null && _grabber.Grabbed == z.Owner) continue;
+                return z;
             }
             return null;
         }
 
-        /// <summary>External velocity kick (explosions). Vertical part launches you.</summary>
+        /// <summary>External velocity kick (a slipping ladder, a bonk). Vertical part launches you.</summary>
         public void AddImpulse(Vector3 velocityChange)
         {
             _verticalVelocity += velocityChange.y;
@@ -145,21 +154,15 @@ namespace SoapCarvers.Player
         {
             Rigidbody rb = hit.collider.attachedRigidbody;
             if (rb == null || rb.isKinematic) return;
-            // Standing on it (deck, ladder rung): don't shove what we stand on.
+            // Standing on it (a ladder rung, a pile): don't shove what we stand on.
             if (hit.normal.y > 0.5f || hit.moveDirection.y < -0.3f) return;
             Vector3 push = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
             if (push.sqrMagnitude < 1e-4f) return;
             push.Normalize();
 
-            // Heavy movable things (scaffolds) handle pushing themselves.
-            var pushable = rb.GetComponent<IPushable>();
-            if (pushable != null)
-            {
-                pushable.Push(push);
-                return;
-            }
-            // Light stuff (debris, tools) gets nudged; heavy stuff (ladders) doesn't
-            // budge, otherwise climbing would kick the ladder out from under you.
+            // Light stuff (shards, nail boxes) gets nudged; heavier stuff doesn't
+            // budge, otherwise climbing would kick the ladder out from under you
+            // and walking would bulldoze the building. Grab things to move them.
             if (rb.mass <= lightObjectMass)
                 rb.AddForce(push * pushPower, ForceMode.VelocityChange);
         }
