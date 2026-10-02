@@ -1,9 +1,10 @@
-using SoapCarvers.Core;
-using SoapCarvers.Soap;
+using System.Collections.Generic;
+using BuildCrew.Core;
+using BuildCrew.Parts;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace SoapCarvers.Targets
+namespace BuildCrew.Building
 {
     public enum BlueprintView
     {
@@ -14,49 +15,36 @@ namespace SoapCarvers.Targets
     }
 
     /// <summary>
-    /// A hidden "photo studio" far away from the play area: a hologram mesh of
-    /// the target (meshed with the same marching cubes code as the soap) on its
-    /// own layer, plus an orthographic camera rendering it into a RenderTexture
-    /// that blueprint tablets display.
+    /// A hidden "photo studio" far above the world: a hologram model of the
+    /// team's kit (one box per slot, on the Hologram layer) and an orthographic
+    /// camera that renders it into a RenderTexture for the blueprint tablet
+    /// and the briefing screen. Fixed slots show green, the current stage
+    /// yellow, the rest blue.
     ///
-    /// Multiplayer note: one studio is shared, so all tablets show the same view.
-    /// For per-player views give each tablet its own camera/RenderTexture.
+    /// Multiplayer note: one studio per team, so a team's tablets share the view.
     /// </summary>
     public class BlueprintStudio : MonoBehaviour
     {
-        [SerializeField] TargetManager targets;
-        [SerializeField] Material hologramMaterial;
-        [SerializeField] Material outlineMaterial;
+        [SerializeField] BuildSite site;
         [SerializeField] int textureSize = 512;
         [SerializeField] Color backgroundColor = new Color(0.04f, 0.1f, 0.22f, 1f);
 
+        readonly List<MeshRenderer> _boxes = new List<MeshRenderer>();
+        Camera _camera;
+        Transform _model;
+        Bounds _bounds;
+        int _layer;
+        bool _dirty;
+
         public RenderTexture Texture { get; private set; }
         public BlueprintView CurrentView { get; private set; } = BlueprintView.Front;
-        public string ShapeName => targets != null ? targets.Shape.Name : "?";
+        public BuildSite Site => site;
 
-        Camera _camera;
-        Transform _hologramRoot;
-        MeshFilter _hologramFilter;
-        Mesh _hologramMesh;
-        float _extent = 16f;
-        int _layer;
-
-        public void Configure(TargetManager targetManager, Material hologram, Material outline)
-        {
-            targets = targetManager;
-            hologramMaterial = hologram;
-            outlineMaterial = outline;
-        }
+        public void Configure(BuildSite buildSite) => site = buildSite;
 
         void Awake()
         {
             _layer = Layers.Hologram;
-            if (targets == null) targets = FindFirstObjectByType<TargetManager>();
-            if (hologramMaterial == null)
-                hologramMaterial = MaterialFactory.Emissive("Hologram", new Color(0.3f, 0.85f, 1f), new Color(0.1f, 0.45f, 0.6f));
-            if (outlineMaterial == null)
-                outlineMaterial = MaterialFactory.Unlit("HologramOutline", new Color(0.4f, 0.7f, 1f));
-
             Texture = new RenderTexture(textureSize, textureSize, 24) { name = "BlueprintRT", antiAliasing = 2 };
             Texture.Create();
 
@@ -71,90 +59,93 @@ namespace SoapCarvers.Targets
             _camera.targetTexture = Texture;
             _camera.depth = -50;
             _camera.allowHDR = false;
-            _camera.allowMSAA = true;
 
-            _hologramRoot = new GameObject("Hologram").transform;
-            _hologramRoot.SetParent(transform, false);
-            _hologramRoot.gameObject.layer = _layer;
-            _hologramFilter = _hologramRoot.gameObject.AddComponent<MeshFilter>();
-            var mr = _hologramRoot.gameObject.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = hologramMaterial;
-            // The studio floats high above the world; never let it cast shadows there.
-            mr.shadowCastingMode = ShadowCastingMode.Off;
-            mr.receiveShadows = false;
+            var lightGo = new GameObject("StudioLight");
+            lightGo.transform.SetParent(transform, false);
+            lightGo.transform.localRotation = Quaternion.Euler(40f, -30f, 0f);
+            var l = lightGo.AddComponent<Light>();
+            l.type = LightType.Directional;
+            l.intensity = 0.6f;
+            l.cullingMask = 1 << _layer;
+            l.shadows = LightShadows.None;
+
+            _model = new GameObject("Model").transform;
+            _model.SetParent(transform, false);
         }
 
         void OnEnable()
         {
-            if (targets != null) targets.TargetChanged += Rebuild;
+            if (site != null) site.Changed += MarkDirty;
         }
 
         void OnDisable()
         {
-            if (targets != null) targets.TargetChanged -= Rebuild;
+            if (site != null) site.Changed -= MarkDirty;
         }
 
-        void Start()
+        void MarkDirty() => _dirty = true;
+
+        void LateUpdate()
         {
-            Rebuild();
+            if (site == null) return;
+            if (_boxes.Count != site.Slots.Count) Rebuild();
+            if (_dirty) Recolor();
         }
 
-        public void Rebuild()
+        void Rebuild()
         {
-            if (targets == null || targets.Grid == null) return;
-            VoxelGrid grid = targets.Grid;
-            _extent = grid.Extent;
-
-            if (_hologramMesh == null) _hologramMesh = new Mesh { name = "HologramMesh" };
-            new MarchingCubesMesher().Build(grid, Vector3Int.zero, Vector3Int.one * grid.Cells, _hologramMesh);
-            _hologramFilter.sharedMesh = _hologramMesh;
-            // Center the hologram on the studio pivot.
-            _hologramRoot.localPosition = -grid.Center;
-
-            BuildOutline(grid);
+            foreach (MeshRenderer r in _boxes) if (r != null) Destroy(r.gameObject);
+            _boxes.Clear();
+            Mesh cube = PrimitiveMeshes.Get(PrimitiveType.Cube);
+            _bounds = new Bounds(Vector3.zero, Vector3.zero);
+            bool first = true;
+            foreach (BuildSlot slot in site.Slots)
+            {
+                var go = new GameObject("Box");
+                go.layer = _layer;
+                go.transform.SetParent(_model, false);
+                go.transform.localPosition = slot.Data.position;
+                go.transform.localRotation = Quaternion.Euler(slot.Data.rotation);
+                go.transform.localScale = slot.Data.size;
+                go.AddComponent<MeshFilter>().sharedMesh = cube;
+                var r = go.AddComponent<MeshRenderer>();
+                r.shadowCastingMode = ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                _boxes.Add(r);
+                var b = new Bounds(slot.Data.position, slot.Data.size);
+                if (first) { _bounds = b; first = false; }
+                else _bounds.Encapsulate(b);
+            }
+            // Center the model on the studio pivot.
+            _model.localPosition = -_bounds.center;
+            Recolor();
             SetView(CurrentView);
         }
 
-        /// <summary>Thin boxes along the 12 edges of the block, for scale.</summary>
-        void BuildOutline(VoxelGrid grid)
+        void Recolor()
         {
-            Transform old = transform.Find("Outline");
-            if (old != null) Destroy(old.gameObject);
-            var root = new GameObject("Outline").transform;
-            root.SetParent(transform, false);
-
-            float h = _extent * 0.5f;
-            float t = _extent * 0.006f;
-            for (int axis = 0; axis < 3; axis++)
-            for (int a = -1; a <= 1; a += 2)
-            for (int b = -1; b <= 1; b += 2)
+            _dirty = false;
+            MaterialPalette p = World.Palette;
+            Material Get(string k) => p != null ? p.Get(k) : MaterialPalette.Create(k);
+            Material done = Get("hologramFixed"), stage = Get("hologramStage"), rest = Get("hologram");
+            int current = site.CurrentStage;
+            for (int i = 0; i < _boxes.Count && i < site.Slots.Count; i++)
             {
-                Vector3 pos, scale;
-                if (axis == 0) { pos = new Vector3(0, a * h, b * h); scale = new Vector3(_extent, t, t); }
-                else if (axis == 1) { pos = new Vector3(a * h, 0, b * h); scale = new Vector3(t, _extent, t); }
-                else { pos = new Vector3(a * h, b * h, 0); scale = new Vector3(t, t, _extent); }
-                var edge = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                DestroyImmediate(edge.GetComponent<Collider>());
-                edge.name = "Edge";
-                edge.layer = _layer;
-                edge.transform.SetParent(root, false);
-                edge.transform.localPosition = pos;
-                edge.transform.localScale = scale;
-                var r = edge.GetComponent<MeshRenderer>();
-                r.sharedMaterial = outlineMaterial;
-                r.shadowCastingMode = ShadowCastingMode.Off;
+                BuildSlot s = site.Slots[i];
+                _boxes[i].sharedMaterial = s.State == SlotState.Fixed ? done : s.Stage == current ? stage : rest;
             }
         }
 
         /// <summary>
-        /// Front looks from the player spawn side (-Z) toward +Z; Side from +X;
-        /// Top straight down with the front at the bottom of the image; Back from +Z.
+        /// Front looks at the building's front (-z side) toward +z; Side from +x;
+        /// Top straight down with the front at the bottom; Back from +z.
         /// </summary>
         public void SetView(BlueprintView view)
         {
             CurrentView = view;
             if (_camera == null) return;
-            float dist = _extent * 1.5f;
+            float extent = Mathf.Max(_bounds.size.x, Mathf.Max(_bounds.size.y, _bounds.size.z), 1f);
+            float dist = extent * 2f;
             Vector3 pos;
             Quaternion rot;
             switch (view)
@@ -170,15 +161,16 @@ namespace SoapCarvers.Targets
             }
             _camera.transform.localPosition = pos;
             _camera.transform.localRotation = rot;
-            _camera.orthographicSize = _extent * 0.6f;
+            _camera.orthographicSize = extent * 0.62f;
             _camera.nearClipPlane = 0.1f;
-            _camera.farClipPlane = dist * 2f + _extent;
+            _camera.farClipPlane = dist * 2f + extent;
         }
+
+        public void CycleView() => SetView((BlueprintView)(((int)CurrentView + 1) % 4));
 
         void OnDestroy()
         {
             if (Texture != null) Texture.Release();
-            if (_hologramMesh != null) Destroy(_hologramMesh);
         }
     }
 }
