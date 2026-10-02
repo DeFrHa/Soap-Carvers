@@ -1,0 +1,1047 @@
+{
+  "id": "garden_shed",
+  "name": "Garden Shed",
+  "description": "A 3 x 2.5 m timber shed with a tin roof. Cut the boards, mind the door.",
+  "roundTime": 240,
+  "finalTest": "wind",
+  "stages": [
+    "Posts",
+    "Wall planks",
+    "Roof beams",
+    "Corrugated roof",
+    "Door"
+  ],
+  "slots": [
+    {
+      "id": "post_fl",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": -1.44,
+        "y": 1.2,
+        "z": -1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "post_fr",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": 1.44,
+        "y": 1.2,
+        "z": -1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "post_bl",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": -1.44,
+        "y": 1.2,
+        "z": 1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "post_br",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": 1.44,
+        "y": 1.2,
+        "z": 1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "post_dl",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": -0.56,
+        "y": 1.2,
+        "z": -1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "post_dr",
+      "partType": "post",
+      "size": {
+        "x": 2.4,
+        "y": 0.12,
+        "z": 0.12
+      },
+      "position": {
+        "x": 0.56,
+        "y": 1.2,
+        "z": -1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 90
+      },
+      "stage": 0,
+      "fixMethod": "nails",
+      "restsOn": []
+    },
+    {
+      "id": "board_back_0",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 0.2,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_0",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 0.2,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_0",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 0.2,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_l_0",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1,
+        "y": 0.2,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_dl"
+      ]
+    },
+    {
+      "id": "board_front_r_0",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1,
+        "y": 0.2,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "board_back_1",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 0.6,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_1",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 0.6,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_1",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 0.6,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_l_1",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1,
+        "y": 0.6,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_dl"
+      ]
+    },
+    {
+      "id": "board_front_r_1",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1,
+        "y": 0.6,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "board_back_2",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 1,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_2",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 1,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_2",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 1,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_l_2",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1,
+        "y": 1,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_dl"
+      ]
+    },
+    {
+      "id": "board_front_r_2",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1,
+        "y": 1,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "board_back_3",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 1.4,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_3",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 1.4,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_3",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 1.4,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_l_3",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1,
+        "y": 1.4,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_dl"
+      ]
+    },
+    {
+      "id": "board_front_r_3",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1,
+        "y": 1.4,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "board_back_4",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 1.8,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_4",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 1.8,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_4",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 1.8,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_l_4",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1,
+        "y": 1.8,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_dl"
+      ]
+    },
+    {
+      "id": "board_front_r_4",
+      "partType": "plank",
+      "size": {
+        "x": 1,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1,
+        "y": 1.8,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "board_back_5",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 2.2,
+        "z": 1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_bl",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_left_5",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": -1.515,
+        "y": 2.2,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "board_right_5",
+      "partType": "plank",
+      "size": {
+        "x": 2.5,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 1.515,
+        "y": 2.2,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "board_front_5",
+      "partType": "plank",
+      "size": {
+        "x": 3,
+        "y": 0.4,
+        "z": 0.03
+      },
+      "position": {
+        "x": 0,
+        "y": 2.2,
+        "z": -1.265
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_fr",
+        "post_dl",
+        "post_dr"
+      ]
+    },
+    {
+      "id": "beam_l",
+      "partType": "beam",
+      "size": {
+        "x": 2.9,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -1.44,
+        "y": 2.5,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fl",
+        "post_bl"
+      ]
+    },
+    {
+      "id": "beam_m",
+      "partType": "beam",
+      "size": {
+        "x": 2.9,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 0,
+        "y": 2.5,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "board_front_5",
+        "board_back_5"
+      ]
+    },
+    {
+      "id": "beam_r",
+      "partType": "beam",
+      "size": {
+        "x": 2.9,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 1.44,
+        "y": 2.5,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "post_fr",
+        "post_br"
+      ]
+    },
+    {
+      "id": "sheet_l",
+      "partType": "metalSheet",
+      "size": {
+        "x": 3,
+        "y": 0.03,
+        "z": 1.2
+      },
+      "position": {
+        "x": -1.2,
+        "y": 2.615,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 3,
+      "fixMethod": "screws",
+      "restsOn": [
+        "beam_l"
+      ]
+    },
+    {
+      "id": "sheet_m",
+      "partType": "metalSheet",
+      "size": {
+        "x": 3,
+        "y": 0.03,
+        "z": 1.2
+      },
+      "position": {
+        "x": 0,
+        "y": 2.615,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 3,
+      "fixMethod": "screws",
+      "restsOn": [
+        "beam_m"
+      ]
+    },
+    {
+      "id": "sheet_r",
+      "partType": "metalSheet",
+      "size": {
+        "x": 3,
+        "y": 0.03,
+        "z": 1.2
+      },
+      "position": {
+        "x": 1.2,
+        "y": 2.615,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 3,
+      "fixMethod": "screws",
+      "restsOn": [
+        "beam_r"
+      ]
+    },
+    {
+      "id": "door",
+      "partType": "door",
+      "size": {
+        "x": 0.98,
+        "y": 1.98,
+        "z": 0.04
+      },
+      "position": {
+        "x": 0,
+        "y": 1.01,
+        "z": -1.19
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "screws",
+      "restsOn": [
+        "post_dl",
+        "post_dr"
+      ]
+    }
+  ]
+}

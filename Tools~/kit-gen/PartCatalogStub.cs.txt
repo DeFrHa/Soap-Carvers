@@ -1,0 +1,37 @@
+// Stand-in for BuildCrew.Parts.PartCatalog with the same stock data as Parts/BuiltInParts.cs (keep in sync).
+using UnityEngine;
+namespace BuildCrew.Parts
+{
+    public class PartDefinition
+    {
+        public string Id;
+        public float[] StandardLengths;
+        public Vector3 Default;
+        public virtual Vector3 StockSize(Vector3 needed) =>
+            Id == "pane" && needed.x <= 1.04f && needed.y <= 1.04f ? new Vector3(1f, 1f, needed.z) : needed;
+        public Vector3 DefaultSize(float length) => StandardLengths != null ? new Vector3(length, Default.y, Default.z) : Default;
+    }
+
+    public static class PartCatalog
+    {
+        static readonly PartDefinition[] Defs =
+        {
+            new PartDefinition { Id = "post", StandardLengths = new[] { 2.5f }, Default = new Vector3(2.5f, 0.12f, 0.12f) },
+            new PartDefinition { Id = "plank", StandardLengths = new[] { 2f, 3f }, Default = new Vector3(2f, 0.4f, 0.03f) },
+            new PartDefinition { Id = "beam", StandardLengths = new[] { 3f, 4f }, Default = new Vector3(3f, 0.2f, 0.1f) },
+            new PartDefinition { Id = "stone", Default = new Vector3(1.5f, 0.25f, 0.25f) },
+            new PartDefinition { Id = "brickStack", Default = new Vector3(1.5f, 0.4f, 0.2f) },
+            new PartDefinition { Id = "roofTile", Default = new Vector3(1.5f, 0.04f, 1f) },
+            new PartDefinition { Id = "metalSheet", Default = new Vector3(3f, 0.03f, 1.2f) },
+            new PartDefinition { Id = "pane", Default = new Vector3(1f, 1f, 0.006f) },
+            new PartDefinition { Id = "windowFrame", Default = new Vector3(1.5f, 1.2f, 0.1f) },
+            new PartDefinition { Id = "door", Default = new Vector3(0.9f, 2f, 0.04f) },
+            new PartDefinition { Id = "nails", Default = new Vector3(0.22f, 0.12f, 0.14f) },
+            new PartDefinition { Id = "screws", Default = new Vector3(0.22f, 0.12f, 0.14f) },
+            new PartDefinition { Id = "toilet", Default = new Vector3(0.42f, 0.78f, 0.68f) },
+            new PartDefinition { Id = "gnome", Default = new Vector3(0.28f, 0.55f, 0.28f) },
+        };
+        public static PartDefinition Get(string id) => System.Array.Find(Defs, d => d.Id == id);
+        public static bool IsKnown(string id) => Get(id) != null;
+    }
+}

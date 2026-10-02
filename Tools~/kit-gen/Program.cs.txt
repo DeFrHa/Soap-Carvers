@@ -1,0 +1,135 @@
+// Runs the kit designs outside Unity: validates them, checks the geometry (overlapping
+// slots, restsOn pairs that don't touch), prints pile statistics and writes the JSON files.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using BuildCrew.Kits;
+using BuildCrew.Parts;
+using UnityEngine;
+
+static class Program
+{
+    static int Main(string[] args)
+    {
+        string outDir = args.Length > 0 ? args[0] : "Kits";
+        Directory.CreateDirectory(outDir);
+        int problems = 0;
+        var json = new JsonSerializerOptions { IncludeFields = true, WriteIndented = true, IgnoreReadOnlyProperties = true };
+        foreach (var kv in KitDesigns.All())
+        {
+            KitDefinition kit = kv.Value;
+            Console.WriteLine($"== {kit.name}: {kit.slots.Length} slots, {kit.stages.Length} stages, {kit.roundTime}s, test {kit.finalTest}");
+            foreach (string e in kit.Validate(PartCatalog.IsKnown)) { Console.WriteLine("  INVALID: " + e); problems++; }
+            problems += CheckGeometry(kit);
+            for (int st = 0; st < kit.stages.Length; st++)
+                Console.WriteLine($"  stage {st} {kit.stages[st]}: {kit.slots.Count(s => s.stage == st)} slots");
+            var bounds = Bounds(kit);
+            Console.WriteLine($"  bounds min {bounds.min} max {bounds.max}");
+            var opts = new PileOptions { SparePercent = 0.15f, WrongLengthDecoys = 3, NailsPerFix = 3, ScrewsPerFix = 3, FixingsPerBox = 50, LengthTolerance = 0.05f };
+            var pile = PileGenerator.Generate(kit, 42, opts);
+            Console.WriteLine($"  pile: {pile.Count} parts");
+            foreach (var g in pile.GroupBy(p => $"{p.TypeId} {p.Size.x:0.##}x{p.Size.y:0.##}x{p.Size.z:0.###} {p.Role}").OrderBy(g => g.Key))
+                Console.WriteLine($"    {g.Count(),3} x {g.Key}");
+            File.WriteAllText(Path.Combine(outDir, kv.Key), JsonSerializer.Serialize(kit, json) + "\n");
+        }
+        Console.WriteLine(problems == 0 ? "OK" : $"{problems} problem(s)");
+        return problems == 0 ? 0 : 1;
+    }
+
+    // ---- oriented boxes from Unity Euler angles (R = Ry * Rx * Rz)
+    struct Box { public double[] C; public double[][] Axes; public double[] Half; public string Id; }
+
+    static double[][] Rot(Vector3 e)
+    {
+        double x = e.x * Math.PI / 180, y = e.y * Math.PI / 180, z = e.z * Math.PI / 180;
+        double[,] Rx = { { 1, 0, 0 }, { 0, Math.Cos(x), -Math.Sin(x) }, { 0, Math.Sin(x), Math.Cos(x) } };
+        double[,] Ry = { { Math.Cos(y), 0, Math.Sin(y) }, { 0, 1, 0 }, { -Math.Sin(y), 0, Math.Cos(y) } };
+        double[,] Rz = { { Math.Cos(z), -Math.Sin(z), 0 }, { Math.Sin(z), Math.Cos(z), 0 }, { 0, 0, 1 } };
+        double[,] M = Mul(Mul(Ry, Rx), Rz);
+        return new[] { new[] { M[0, 0], M[1, 0], M[2, 0] }, new[] { M[0, 1], M[1, 1], M[2, 1] }, new[] { M[0, 2], M[1, 2], M[2, 2] } };
+    }
+
+    static double[,] Mul(double[,] a, double[,] b)
+    {
+        var r = new double[3, 3];
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) for (int k = 0; k < 3; k++) r[i, j] += a[i, k] * b[k, j];
+        return r;
+    }
+
+    static Box ToBox(KitSlot s, double grow) => new Box
+    {
+        Id = s.id,
+        C = new double[] { s.position.x, s.position.y, s.position.z },
+        Axes = Rot(s.rotation),
+        Half = new[] { s.size.x / 2 + grow, s.size.y / 2 + grow, s.size.z / 2 + grow },
+    };
+
+    static double Dot(double[] a, double[] b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    static double[] Cross(double[] a, double[] b) => new[] { a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0] };
+
+    /// <summary>Separating axis test for two oriented boxes.</summary>
+    static bool Overlap(Box a, Box b)
+    {
+        var d = new[] { b.C[0] - a.C[0], b.C[1] - a.C[1], b.C[2] - a.C[2] };
+        var axes = new List<double[]>();
+        axes.AddRange(a.Axes); axes.AddRange(b.Axes);
+        foreach (var u in a.Axes) foreach (var v in b.Axes) axes.Add(Cross(u, v));
+        foreach (var ax in axes)
+        {
+            double len = Math.Sqrt(Dot(ax, ax));
+            if (len < 1e-9) continue;
+            var n = new[] { ax[0] / len, ax[1] / len, ax[2] / len };
+            double ra = 0, rb = 0;
+            for (int i = 0; i < 3; i++) { ra += a.Half[i] * Math.Abs(Dot(a.Axes[i], n)); rb += b.Half[i] * Math.Abs(Dot(b.Axes[i], n)); }
+            if (Math.Abs(Dot(d, n)) > ra + rb) return false;
+        }
+        return true;
+    }
+
+    static int CheckGeometry(KitDefinition kit)
+    {
+        int problems = 0;
+        var shrunk = kit.slots.Select(s => ToBox(s, -0.012)).ToArray();
+        for (int i = 0; i < shrunk.Length; i++)
+        for (int j = i + 1; j < shrunk.Length; j++)
+        {
+            // Window frames are hollow: their pane sits inside the bounding box.
+            if (IsFrameAndPane(kit.slots[i], kit.slots[j])) continue;
+            if (Overlap(shrunk[i], shrunk[j])) { Console.WriteLine($"  OVERLAP: {shrunk[i].Id} <-> {shrunk[j].Id}"); problems++; }
+        }
+        var byId = kit.slots.ToDictionary(s => s.id);
+        foreach (var s in kit.slots)
+        foreach (var r in s.restsOn ?? new string[0])
+            if (byId.TryGetValue(r, out var o) && !Overlap(ToBox(s, 0.03), ToBox(o, 0.03)))
+            { Console.WriteLine($"  NOT TOUCHING: {s.id} restsOn {r}"); problems++; }
+        foreach (var s in kit.slots)
+        {
+            if (s.restsOn != null && s.restsOn.Length > 0) continue;
+            var b = ToBox(s, 0);
+            double bottom = b.C[1] - Enumerable.Range(0, 3).Sum(i => b.Half[i] * Math.Abs(b.Axes[i][1]));
+            if (bottom > 0.03) { Console.WriteLine($"  FLOATING ground slot: {s.id} bottom at {bottom:0.###}"); problems++; }
+        }
+        return problems;
+    }
+
+    static bool IsFrameAndPane(KitSlot a, KitSlot b) =>
+        (a.partType == "windowFrame" && b.partType == "pane" && Array.IndexOf(b.restsOn, a.id) >= 0) ||
+        (b.partType == "windowFrame" && a.partType == "pane" && Array.IndexOf(a.restsOn, b.id) >= 0);
+
+    static (Vector3 min, Vector3 max) Bounds(KitDefinition kit)
+    {
+        var min = new Vector3(1e9f, 1e9f, 1e9f); var max = new Vector3(-1e9f, -1e9f, -1e9f);
+        foreach (var s in kit.slots)
+        {
+            var b = ToBox(s, 0);
+            for (int k = 0; k < 3; k++)
+            {
+                double ext = Enumerable.Range(0, 3).Sum(i => b.Half[i] * Math.Abs(b.Axes[i][k]));
+                min[k] = Math.Min(min[k], (float)(b.C[k] - ext)); max[k] = Math.Max(max[k], (float)(b.C[k] + ext));
+            }
+        }
+        return (min, max);
+    }
+}

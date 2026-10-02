@@ -1,0 +1,3449 @@
+{
+  "id": "cottage",
+  "name": "Cottage",
+  "description": "A 6 x 5 m brick cottage with a tiled roof and a chimney. Bring friends.",
+  "roundTime": 480,
+  "finalTest": "windRain",
+  "stages": [
+    "Foundation stones",
+    "Brick walls",
+    "Windows and door",
+    "Roof beams",
+    "Roof tiles",
+    "Chimney"
+  ],
+  "slots": [
+    {
+      "id": "stone_front_0",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.125,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_front_1",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -0.75,
+        "y": 0.125,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_front_2",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.125,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_front_3",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.125,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_back_0",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.125,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_back_1",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -0.75,
+        "y": 0.125,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_back_2",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.125,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_back_3",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.125,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_left_0",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.125,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_left_1",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.125,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_left_2",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.125,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_right_0",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.125,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_right_1",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.125,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "stone_right_2",
+      "partType": "stone",
+      "size": {
+        "x": 1.5,
+        "y": 0.25,
+        "z": 0.25
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.125,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 0,
+      "fixMethod": "mortar",
+      "restsOn": []
+    },
+    {
+      "id": "brick_front_0_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_front_0"
+      ]
+    },
+    {
+      "id": "brick_front_0_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_front_2"
+      ]
+    },
+    {
+      "id": "brick_front_0_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_front_3"
+      ]
+    },
+    {
+      "id": "brick_front_1_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.85,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_0_0"
+      ]
+    },
+    {
+      "id": "brick_front_1_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.85,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_0_2"
+      ]
+    },
+    {
+      "id": "brick_front_1_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.85,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_0_3"
+      ]
+    },
+    {
+      "id": "brick_front_2_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 1.25,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_1_0"
+      ]
+    },
+    {
+      "id": "brick_front_2_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 1.25,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_1_2"
+      ]
+    },
+    {
+      "id": "brick_front_3_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 1.65,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_2_0"
+      ]
+    },
+    {
+      "id": "brick_front_3_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 1.65,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_2_2"
+      ]
+    },
+    {
+      "id": "brick_front_4_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.05,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_3_0"
+      ]
+    },
+    {
+      "id": "brick_front_4_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 2.05,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_3_2"
+      ]
+    },
+    {
+      "id": "brick_front_5_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_4_0"
+      ]
+    },
+    {
+      "id": "brick_front_5_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 2.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_5_0",
+        "brick_front_5_2"
+      ]
+    },
+    {
+      "id": "brick_front_5_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 2.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_4_2"
+      ]
+    },
+    {
+      "id": "brick_front_5_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 2.45,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_front_5_2"
+      ]
+    },
+    {
+      "id": "brick_back_0_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_back_0"
+      ]
+    },
+    {
+      "id": "brick_back_0_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 0.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_back_1"
+      ]
+    },
+    {
+      "id": "brick_back_0_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_back_2"
+      ]
+    },
+    {
+      "id": "brick_back_0_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_back_3"
+      ]
+    },
+    {
+      "id": "brick_back_1_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 0.85,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_0_0"
+      ]
+    },
+    {
+      "id": "brick_back_1_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 0.85,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_0_1"
+      ]
+    },
+    {
+      "id": "brick_back_1_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 0.85,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_0_2"
+      ]
+    },
+    {
+      "id": "brick_back_1_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 0.85,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_0_3"
+      ]
+    },
+    {
+      "id": "brick_back_2_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 1.25,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_1_0"
+      ]
+    },
+    {
+      "id": "brick_back_2_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 1.25,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_1_1"
+      ]
+    },
+    {
+      "id": "brick_back_2_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 1.25,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_1_3"
+      ]
+    },
+    {
+      "id": "brick_back_3_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 1.65,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_2_0"
+      ]
+    },
+    {
+      "id": "brick_back_3_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 1.65,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_2_1"
+      ]
+    },
+    {
+      "id": "brick_back_3_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 1.65,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_2_3"
+      ]
+    },
+    {
+      "id": "brick_back_4_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.05,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_3_0"
+      ]
+    },
+    {
+      "id": "brick_back_4_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 2.05,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_3_1"
+      ]
+    },
+    {
+      "id": "brick_back_4_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 2.05,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_3_3"
+      ]
+    },
+    {
+      "id": "brick_back_5_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_4_0"
+      ]
+    },
+    {
+      "id": "brick_back_5_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -0.75,
+        "y": 2.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_4_1"
+      ]
+    },
+    {
+      "id": "brick_back_5_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.75,
+        "y": 2.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_5_1",
+        "brick_back_5_3"
+      ]
+    },
+    {
+      "id": "brick_back_5_3",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.25,
+        "y": 2.45,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_back_4_3"
+      ]
+    },
+    {
+      "id": "brick_left_0_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.45,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_left_0"
+      ]
+    },
+    {
+      "id": "brick_left_0_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.45,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_left_1"
+      ]
+    },
+    {
+      "id": "brick_left_0_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.45,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_left_2"
+      ]
+    },
+    {
+      "id": "brick_left_1_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.85,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_0_0"
+      ]
+    },
+    {
+      "id": "brick_left_1_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.85,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_0_1"
+      ]
+    },
+    {
+      "id": "brick_left_1_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 0.85,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_0_2"
+      ]
+    },
+    {
+      "id": "brick_left_2_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.25,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_1_0"
+      ]
+    },
+    {
+      "id": "brick_left_2_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.25,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_1_2"
+      ]
+    },
+    {
+      "id": "brick_left_3_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.65,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_2_0"
+      ]
+    },
+    {
+      "id": "brick_left_3_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.65,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_2_2"
+      ]
+    },
+    {
+      "id": "brick_left_4_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 2.05,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_3_0"
+      ]
+    },
+    {
+      "id": "brick_left_4_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 2.05,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_3_2"
+      ]
+    },
+    {
+      "id": "brick_left_5_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 2.45,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_4_0"
+      ]
+    },
+    {
+      "id": "brick_left_5_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 2.45,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_5_0",
+        "brick_left_5_2"
+      ]
+    },
+    {
+      "id": "brick_left_5_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": -2.9,
+        "y": 2.45,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_left_4_2"
+      ]
+    },
+    {
+      "id": "brick_right_0_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.45,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_right_0"
+      ]
+    },
+    {
+      "id": "brick_right_0_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.45,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_right_1"
+      ]
+    },
+    {
+      "id": "brick_right_0_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.45,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "stone_right_2"
+      ]
+    },
+    {
+      "id": "brick_right_1_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.85,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_0_0"
+      ]
+    },
+    {
+      "id": "brick_right_1_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.85,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_0_1"
+      ]
+    },
+    {
+      "id": "brick_right_1_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 0.85,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_0_2"
+      ]
+    },
+    {
+      "id": "brick_right_2_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.25,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_1_0"
+      ]
+    },
+    {
+      "id": "brick_right_2_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.25,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_1_2"
+      ]
+    },
+    {
+      "id": "brick_right_3_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.65,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_2_0"
+      ]
+    },
+    {
+      "id": "brick_right_3_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.65,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_2_2"
+      ]
+    },
+    {
+      "id": "brick_right_4_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 2.05,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_3_0"
+      ]
+    },
+    {
+      "id": "brick_right_4_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 2.05,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_3_2"
+      ]
+    },
+    {
+      "id": "brick_right_5_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 2.45,
+        "z": -1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_4_0"
+      ]
+    },
+    {
+      "id": "brick_right_5_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 2.45,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_5_0",
+        "brick_right_5_2"
+      ]
+    },
+    {
+      "id": "brick_right_5_2",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.9,
+        "y": 2.45,
+        "z": 1.5
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 1,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "brick_right_4_2"
+      ]
+    },
+    {
+      "id": "door_front",
+      "partType": "door",
+      "size": {
+        "x": 1.48,
+        "y": 1.98,
+        "z": 0.06
+      },
+      "position": {
+        "x": -0.75,
+        "y": 1.26,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "screws",
+      "restsOn": [
+        "stone_front_1"
+      ]
+    },
+    {
+      "id": "frame_front",
+      "partType": "windowFrame",
+      "size": {
+        "x": 1.5,
+        "y": 1.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 1.65,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_1_3"
+      ]
+    },
+    {
+      "id": "pane_front",
+      "partType": "pane",
+      "size": {
+        "x": 1,
+        "y": 0.8,
+        "z": 0.006
+      },
+      "position": {
+        "x": 2.25,
+        "y": 1.65,
+        "z": -2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "frame_front"
+      ]
+    },
+    {
+      "id": "frame_back",
+      "partType": "windowFrame",
+      "size": {
+        "x": 1.5,
+        "y": 1.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 1.65,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_1_2"
+      ]
+    },
+    {
+      "id": "pane_back",
+      "partType": "pane",
+      "size": {
+        "x": 1,
+        "y": 0.8,
+        "z": 0.006
+      },
+      "position": {
+        "x": 0.75,
+        "y": 1.65,
+        "z": 2.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "frame_back"
+      ]
+    },
+    {
+      "id": "frame_left",
+      "partType": "windowFrame",
+      "size": {
+        "x": 1.5,
+        "y": 1.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.65,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_left_1_1"
+      ]
+    },
+    {
+      "id": "pane_left",
+      "partType": "pane",
+      "size": {
+        "x": 1,
+        "y": 0.8,
+        "z": 0.006
+      },
+      "position": {
+        "x": -2.9,
+        "y": 1.65,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "frame_left"
+      ]
+    },
+    {
+      "id": "frame_right",
+      "partType": "windowFrame",
+      "size": {
+        "x": 1.5,
+        "y": 1.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.65,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_right_1_1"
+      ]
+    },
+    {
+      "id": "pane_right",
+      "partType": "pane",
+      "size": {
+        "x": 1,
+        "y": 0.8,
+        "z": 0.006
+      },
+      "position": {
+        "x": 2.9,
+        "y": 1.65,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 2,
+      "fixMethod": "nails",
+      "restsOn": [
+        "frame_right"
+      ]
+    },
+    {
+      "id": "rafter_f_0",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -2.9,
+        "y": 3.6677,
+        "z": -1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": -90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_5_0"
+      ]
+    },
+    {
+      "id": "rafter_b_0",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -2.9,
+        "y": 3.6677,
+        "z": 1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_5_0"
+      ]
+    },
+    {
+      "id": "rafter_f_1",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -1.45,
+        "y": 3.6677,
+        "z": -1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": -90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_5_1"
+      ]
+    },
+    {
+      "id": "rafter_b_1",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -1.45,
+        "y": 3.6677,
+        "z": 1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_5_1"
+      ]
+    },
+    {
+      "id": "rafter_f_2",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 0,
+        "y": 3.6677,
+        "z": -1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": -90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_5_2"
+      ]
+    },
+    {
+      "id": "rafter_b_2",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 0,
+        "y": 3.6677,
+        "z": 1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_5_2"
+      ]
+    },
+    {
+      "id": "rafter_f_3",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 1.45,
+        "y": 3.6677,
+        "z": -1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": -90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_5_2"
+      ]
+    },
+    {
+      "id": "rafter_b_3",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 1.45,
+        "y": 3.6677,
+        "z": 1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_5_2"
+      ]
+    },
+    {
+      "id": "rafter_f_4",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 2.9,
+        "y": 3.6677,
+        "z": -1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": -90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_front_5_3"
+      ]
+    },
+    {
+      "id": "rafter_b_4",
+      "partType": "beam",
+      "size": {
+        "x": 4,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 2.9,
+        "y": 3.6677,
+        "z": 1.5739
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 43.5312
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "brick_back_5_3"
+      ]
+    },
+    {
+      "id": "ridge_0",
+      "partType": "beam",
+      "size": {
+        "x": 3,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": -1.5,
+        "y": 5.0452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_0",
+        "rafter_b_0",
+        "rafter_f_1",
+        "rafter_b_1",
+        "rafter_f_2",
+        "rafter_b_2"
+      ]
+    },
+    {
+      "id": "ridge_1",
+      "partType": "beam",
+      "size": {
+        "x": 3,
+        "y": 0.2,
+        "z": 0.1
+      },
+      "position": {
+        "x": 1.5,
+        "y": 5.0452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 3,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_2",
+        "rafter_b_2",
+        "rafter_f_3",
+        "rafter_b_3",
+        "rafter_f_4",
+        "rafter_b_4"
+      ]
+    },
+    {
+      "id": "tile_f_0_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.7216,
+        "z": -2.744
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_0",
+        "rafter_f_1"
+      ]
+    },
+    {
+      "id": "tile_f_0_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 2.7216,
+        "z": -2.744
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_1",
+        "rafter_f_2"
+      ]
+    },
+    {
+      "id": "tile_f_0_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 2.7216,
+        "z": -2.744
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_2",
+        "rafter_f_3"
+      ]
+    },
+    {
+      "id": "tile_f_0_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 2.7216,
+        "z": -2.744
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_3",
+        "rafter_f_4"
+      ]
+    },
+    {
+      "id": "tile_f_1_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 3.4104,
+        "z": -2.019
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_0",
+        "rafter_f_1"
+      ]
+    },
+    {
+      "id": "tile_f_1_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 3.4104,
+        "z": -2.019
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_1",
+        "rafter_f_2"
+      ]
+    },
+    {
+      "id": "tile_f_1_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 3.4104,
+        "z": -2.019
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_2",
+        "rafter_f_3"
+      ]
+    },
+    {
+      "id": "tile_f_1_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 3.4104,
+        "z": -2.019
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_3",
+        "rafter_f_4"
+      ]
+    },
+    {
+      "id": "tile_f_2_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 4.0991,
+        "z": -1.294
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_0",
+        "rafter_f_1"
+      ]
+    },
+    {
+      "id": "tile_f_2_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 4.0991,
+        "z": -1.294
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_1",
+        "rafter_f_2"
+      ]
+    },
+    {
+      "id": "tile_f_2_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 4.0991,
+        "z": -1.294
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_2",
+        "rafter_f_3"
+      ]
+    },
+    {
+      "id": "tile_f_2_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 4.0991,
+        "z": -1.294
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_3",
+        "rafter_f_4"
+      ]
+    },
+    {
+      "id": "tile_f_3_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 4.7879,
+        "z": -0.569
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_0",
+        "rafter_f_1"
+      ]
+    },
+    {
+      "id": "tile_f_3_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 4.7879,
+        "z": -0.569
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_1",
+        "rafter_f_2"
+      ]
+    },
+    {
+      "id": "tile_f_3_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 4.7879,
+        "z": -0.569
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_2",
+        "rafter_f_3"
+      ]
+    },
+    {
+      "id": "tile_f_3_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 4.7879,
+        "z": -0.569
+      },
+      "rotation": {
+        "x": -43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_f_3",
+        "rafter_f_4"
+      ]
+    },
+    {
+      "id": "tile_b_0_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 2.7216,
+        "z": 2.744
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_0",
+        "rafter_b_1"
+      ]
+    },
+    {
+      "id": "tile_b_0_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 2.7216,
+        "z": 2.744
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_1",
+        "rafter_b_2"
+      ]
+    },
+    {
+      "id": "tile_b_0_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 2.7216,
+        "z": 2.744
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_2",
+        "rafter_b_3"
+      ]
+    },
+    {
+      "id": "tile_b_0_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 2.7216,
+        "z": 2.744
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_3",
+        "rafter_b_4"
+      ]
+    },
+    {
+      "id": "tile_b_1_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 3.4104,
+        "z": 2.019
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_0",
+        "rafter_b_1"
+      ]
+    },
+    {
+      "id": "tile_b_1_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 3.4104,
+        "z": 2.019
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_1",
+        "rafter_b_2"
+      ]
+    },
+    {
+      "id": "tile_b_1_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 3.4104,
+        "z": 2.019
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_2",
+        "rafter_b_3"
+      ]
+    },
+    {
+      "id": "tile_b_1_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 3.4104,
+        "z": 2.019
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_3",
+        "rafter_b_4"
+      ]
+    },
+    {
+      "id": "tile_b_2_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 4.0991,
+        "z": 1.294
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_0",
+        "rafter_b_1"
+      ]
+    },
+    {
+      "id": "tile_b_2_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 4.0991,
+        "z": 1.294
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_1",
+        "rafter_b_2"
+      ]
+    },
+    {
+      "id": "tile_b_2_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 4.0991,
+        "z": 1.294
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_2",
+        "rafter_b_3"
+      ]
+    },
+    {
+      "id": "tile_b_2_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 4.0991,
+        "z": 1.294
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_3",
+        "rafter_b_4"
+      ]
+    },
+    {
+      "id": "tile_b_3_0",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -2.25,
+        "y": 4.7879,
+        "z": 0.569
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_0",
+        "rafter_b_1"
+      ]
+    },
+    {
+      "id": "tile_b_3_1",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": -0.75,
+        "y": 4.7879,
+        "z": 0.569
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_1",
+        "rafter_b_2"
+      ]
+    },
+    {
+      "id": "tile_b_3_2",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 0.75,
+        "y": 4.7879,
+        "z": 0.569
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_2",
+        "rafter_b_3"
+      ]
+    },
+    {
+      "id": "tile_b_3_3",
+      "partType": "roofTile",
+      "size": {
+        "x": 1.5,
+        "y": 0.04,
+        "z": 1
+      },
+      "position": {
+        "x": 2.25,
+        "y": 4.7879,
+        "z": 0.569
+      },
+      "rotation": {
+        "x": 43.5312,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 4,
+      "fixMethod": "nails",
+      "restsOn": [
+        "rafter_b_3",
+        "rafter_b_4"
+      ]
+    },
+    {
+      "id": "chimney_0_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.85,
+        "y": 5.3452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "ridge_1"
+      ]
+    },
+    {
+      "id": "chimney_0_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.15,
+        "y": 5.3452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "ridge_1"
+      ]
+    },
+    {
+      "id": "chimney_1_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 1.5,
+        "y": 5.7452,
+        "z": -0.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_0_0",
+        "chimney_0_1"
+      ]
+    },
+    {
+      "id": "chimney_1_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 1.5,
+        "y": 5.7452,
+        "z": 0.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_0_0",
+        "chimney_0_1"
+      ]
+    },
+    {
+      "id": "chimney_2_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 0.85,
+        "y": 6.1452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_1_0",
+        "chimney_1_1"
+      ]
+    },
+    {
+      "id": "chimney_2_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 2.15,
+        "y": 6.1452,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 90,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_1_0",
+        "chimney_1_1"
+      ]
+    },
+    {
+      "id": "chimney_3_0",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 1.5,
+        "y": 6.5452,
+        "z": -0.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_2_0",
+        "chimney_2_1"
+      ]
+    },
+    {
+      "id": "chimney_3_1",
+      "partType": "brickStack",
+      "size": {
+        "x": 1.5,
+        "y": 0.4,
+        "z": 0.2
+      },
+      "position": {
+        "x": 1.5,
+        "y": 6.5452,
+        "z": 0.65
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "stage": 5,
+      "fixMethod": "mortar",
+      "restsOn": [
+        "chimney_2_0",
+        "chimney_2_1"
+      ]
+    }
+  ]
+}
