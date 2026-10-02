@@ -1,97 +1,136 @@
-using SoapCarvers.Core;
-using SoapCarvers.Targets;
+using System.Collections.Generic;
+using System.Text;
+using BuildCrew.Building;
+using BuildCrew.Core;
+using BuildCrew.Interaction;
+using BuildCrew.Round;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SoapCarvers.Tools
+namespace BuildCrew.Tools
 {
     /// <summary>
-    /// The blueprint tablet (think Sea of Thieves map). Carried low in the hand;
-    /// hold RMB or Tab to raise it in front of your face. Keys 1-4 (or LMB while
-    /// raised) switch Front / Side / Top / Back. The screen shows the
-    /// BlueprintStudio RenderTexture plus shape name, view and the timer.
+    /// The blueprint tablet. Carried low in the hand; hold RMB or Tab to raise
+    /// it in front of your face. Keys 1-4 (or LMB while raised) switch the
+    /// target view Front / Side / Top / Back. Next to the hologram render it
+    /// shows the current stage, the checklist (built / sorted; the pile is "?")
+    /// and the lengths that still need cutting.
     /// </summary>
-    public class BlueprintTablet : Holdable
+    public class BlueprintTablet : Tool
     {
-        [SerializeField] BlueprintStudio studio;
+        [SerializeField] TeamArea area;
         [SerializeField] Renderer screen;
         [SerializeField] Text titleText;
         [SerializeField] Text timerText;
         [SerializeField] Text viewText;
-        [SerializeField] Vector3 raisedPosition = new Vector3(0f, -0.02f, 0.42f);
+        [SerializeField] Text infoText;
+        [SerializeField] Vector3 raisedPosition = new Vector3(0f, -0.03f, 0.5f);
         [SerializeField] Vector3 raisedEuler = Vector3.zero;
 
-        GameManager _game;
+        readonly StringBuilder _sb = new StringBuilder();
         bool _raised;
+        float _refresh;
 
-        public bool IsRaised => _raised && IsHeld;
-        public override string PickupPrompt => "E: Pick up Blueprint Tablet";
-        public override string HeldHint => "Hold RMB/Tab: Look   1-4: Front/Side/Top/Back   Q: Drop";
+        public bool IsRaised => _raised && IsGrabbed;
+        public override bool WorksOutsideBuild => true;
+        public override string LookInfo => "Blueprint tablet";
+        public override string HeldHint => "Hold RMB/Tab: Look   1-4: Front/Side/Top/Back   E: Drop";
 
-        public void SetParts(BlueprintStudio blueprintStudio, Renderer screenRenderer, Text title, Text timer, Text view)
+        public void SetParts(TeamArea teamArea, Renderer screenRenderer, Text title, Text timer, Text view, Text info)
         {
-            studio = blueprintStudio;
+            area = teamArea;
             screen = screenRenderer;
             titleText = title;
             timerText = timer;
             viewText = view;
+            infoText = info;
         }
+
+        BlueprintStudio Studio => area != null ? area.Studio : null;
 
         void Start()
         {
-            _game = FindFirstObjectByType<GameManager>();
-            if (studio == null) studio = FindFirstObjectByType<BlueprintStudio>();
-            if (screen != null && studio != null && studio.Texture != null)
-                MaterialFactory.SetTexture(screen.material, studio.Texture); // .material = per-tablet instance
+            if (screen != null && Studio != null && Studio.Texture != null)
+                MaterialFactory.SetTexture(screen.material, Studio.Texture); // .material = per-tablet instance
         }
 
-        public void SetRaised(bool raised) => _raised = raised;
-
-        public void SetView(BlueprintView view)
+        public override void Tick(IGrabber holder, ToolInput input)
         {
-            if (studio != null) studio.SetView(view);
+            _raised = input.SecondaryHeld;
+            if (Studio == null) return;
+            if (input.ViewKey >= 0) Studio.SetView((BlueprintView)input.ViewKey);
+            if (_raised && input.PrimaryPressed) Studio.CycleView();
         }
 
-        public void CycleView()
-        {
-            if (studio == null) return;
-            SetView((BlueprintView)(((int)studio.CurrentView + 1) % 4));
-        }
+        public override void Use() { }
 
-        public override void OnReleased(Vector3 velocity)
-        {
-            _raised = false;
-            base.OnReleased(velocity);
-        }
-
-        protected override void GetHoldPose(out Vector3 localPosition, out Quaternion localRotation)
+        public override void GetHoldPose(out Vector3 localPosition, out Quaternion localRotation)
         {
             if (_raised)
             {
                 localPosition = raisedPosition;
                 localRotation = Quaternion.Euler(raisedEuler);
             }
-            else
-            {
-                base.GetHoldPose(out localPosition, out localRotation);
-            }
+            else base.GetHoldPose(out localPosition, out localRotation);
         }
+
+        protected override void OnDropped() => _raised = false;
 
         void Update()
         {
-            if (titleText != null && studio != null) titleText.text = $"TARGET: {studio.ShapeName.ToUpperInvariant()}";
-            if (viewText != null && studio != null)
-                viewText.text = ViewLabel(studio.CurrentView);
-            if (timerText != null && _game != null)
+            _refresh -= Time.deltaTime;
+            if (_refresh > 0f) return;
+            _refresh = 0.25f;
+            GameManager game = World.Game;
+            BuildSite site = area != null ? area.Site : null;
+            if (game == null || site == null || site.Kit == null) return;
+
+            int stage = site.CurrentStage;
+            int stages = site.Kit.StageCount();
+            if (titleText != null)
             {
-                switch (_game.State)
-                {
-                    case GameState.Ready: timerText.text = $"{GameManager.FormatTime(_game.TimeRemaining)}  (starts on first carve)"; break;
-                    case GameState.Carving: timerText.text = GameManager.FormatTime(_game.TimeRemaining); break;
-                    case GameState.Scanning: timerText.text = "SCANNING..."; break;
-                    default: timerText.text = $"SCORE {_game.LastResult.Score01 * 100f:0}%"; break;
-                }
+                titleText.text = stage < stages
+                    ? $"{site.Kit.name.ToUpperInvariant()}  -  Stage {stage + 1}/{stages}: {site.Kit.StageName(stage)}"
+                    : $"{site.Kit.name.ToUpperInvariant()}  -  COMPLETE!";
             }
+            if (timerText != null) timerText.text = HudTime(game);
+            if (viewText != null && Studio != null) viewText.text = ViewLabel(Studio.CurrentView);
+            if (infoText != null) infoText.text = BuildInfo(site, stage);
+        }
+
+        static string HudTime(GameManager game)
+        {
+            switch (game.State)
+            {
+                case GameState.Briefing: return "BRIEFING";
+                case GameState.Dump: return "INCOMING!";
+                case GameState.Build: return GameManager.FormatTime(game.TimeRemaining);
+                case GameState.FinalTest: return "FINAL TEST";
+                default: return $"SCORE {game.LastResult.Score01 * 100f:0}%";
+            }
+        }
+
+        string BuildInfo(BuildSite site, int stage)
+        {
+            _sb.Clear();
+            List<ChecklistLine> lines = Checklist.Compute(site, area.Zones);
+            bool unsorted = Checklist.AnyUnsorted(area.Zones);
+            _sb.Append("<b>CHECKLIST</b>  built / need  (+sorted)\n");
+            foreach (ChecklistLine l in lines)
+            {
+                bool done = l.Built >= l.Needed;
+                string color = done ? "#7CFF8A" : l.Stage == stage ? "#FFE066" : "#9FC6FF";
+                string extra = done ? string.Empty : $"  +{l.Sorted}{(l.Built + l.Sorted < l.Needed && unsorted ? " ?" : string.Empty)}";
+                _sb.Append("<color=").Append(color).Append('>').Append(l.Label).Append(": ")
+                    .Append(l.Built).Append('/').Append(l.Needed).Append(extra).Append("</color>\n");
+            }
+            List<string> cuts = Checklist.CutList(site);
+            if (cuts.Count > 0)
+            {
+                _sb.Append("\n<b>CUT</b>\n");
+                foreach (string c in cuts) _sb.Append(c).Append('\n');
+            }
+            return _sb.ToString();
         }
 
         static string ViewLabel(BlueprintView current)

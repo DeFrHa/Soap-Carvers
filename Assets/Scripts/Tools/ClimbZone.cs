@@ -1,10 +1,10 @@
 using UnityEngine;
 
-namespace SoapCarvers.Tools
+namespace BuildCrew.Tools
 {
     /// <summary>
-    /// A trigger volume in front of something climbable (ladder, scaffold
-    /// ladder). PlayerMotor climbs when it overlaps one, presses forward and looks
+    /// A trigger volume in front of something climbable (the ladder).
+    /// PlayerMotor climbs when it overlaps one, presses forward and looks
     /// up/down. Climbing moves along this transform's +Y.
     ///
     /// Climbers push down on the body they climb (climberMass at their position),
@@ -19,15 +19,22 @@ namespace SoapCarvers.Tools
         [Tooltip("Weight (kg) a climber adds to the body while climbing.")]
         [SerializeField] float climberMass = 25f;
 
-        Holdable _holdable;
+        Interaction.Grabbable _grabbable;
         Vector3 _climberPoint;
         float _lastClimbTime = -10f;
 
         public Vector3 Up => transform.up;
         public Vector3 TopPosition => transform.TransformPoint(0f, topLocalY, 0f);
 
-        /// <summary>Not while carried, and only while roughly upright (a ladder lying on the ground isn't climbable).</summary>
-        public bool IsClimbable => (_holdable == null || !_holdable.IsHeld) && Vector3.Dot(Up, Vector3.up) > 0.6f;
+        /// <summary>Only while roughly upright (a ladder lying on the ground isn't climbable).
+        /// PlayerMotor also refuses a ladder the climber is holding himself.</summary>
+        public bool IsClimbable => Vector3.Dot(Up, Vector3.up) > 0.6f;
+
+        /// <summary>The ladder (or whatever) this zone belongs to.</summary>
+        public Interaction.Grabbable Owner => _grabbable;
+
+        /// <summary>A player climbed within the last moment.</summary>
+        public bool IsBeingClimbed => Time.time - _lastClimbTime < 0.2f;
 
         public void Configure(float topY, Rigidbody climbedBody)
         {
@@ -39,7 +46,7 @@ namespace SoapCarvers.Tools
         {
             GetComponent<Collider>().isTrigger = true;
             if (body == null) body = GetComponentInParent<Rigidbody>();
-            _holdable = GetComponentInParent<Holdable>();
+            _grabbable = GetComponentInParent<Interaction.Grabbable>();
         }
 
         /// <summary>PlayerMotor calls this every frame while climbing.</summary>
