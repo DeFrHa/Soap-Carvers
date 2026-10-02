@@ -11,7 +11,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
-WORK="${COMPILE_CHECK_DIR:-/tmp/soapcarvers-compile-check}"
+WORK="${COMPILE_CHECK_DIR:-/tmp/buildcrew-compile-check}"
 REFS="$WORK/refs"
 mkdir -p "$REFS"
 

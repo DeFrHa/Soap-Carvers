@@ -1,9 +1,13 @@
 using System;
-using SoapCarvers.Player;
-using SoapCarvers.Soap;
-using SoapCarvers.Targets;
-using SoapCarvers.Tools;
-using SoapCarvers.UI;
+using System.Collections.Generic;
+using BuildCrew.Building;
+using BuildCrew.Interaction;
+using BuildCrew.Parts;
+using BuildCrew.Player;
+using BuildCrew.Round;
+using BuildCrew.Sorting;
+using BuildCrew.Tools;
+using BuildCrew.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -11,21 +15,22 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     /// <summary>
     /// Builds the complete playable scene from Unity primitives, wiring every
-    /// reference in code. Used both by the editor menu
-    /// (Soap Carvers/Create Playable Scene, which saves the result) and by
-    /// <see cref="GameBootstrap"/> at runtime.
+    /// reference in code. Used by the editor menu (Build Crew/Create Playable
+    /// Scene, which saves the result) and by <see cref="GameBootstrap"/> at runtime.
     ///
     /// Everything is built under an INACTIVE temporary root and detached at the
-    /// end, in dependency order, so at runtime each component's Awake runs only
-    /// after all its references have been assigned.
+    /// end, managers first, so at runtime each component's Awake runs after its
+    /// references were assigned and the managers exist.
     ///
-    /// World layout (meters): the soap block sits on the origin (bottom face at
-    /// y = 0), the player spawns at z = -14 facing +Z, and the workbench is to
-    /// the front-left at z = -12.
+    /// Layout of team area 0 (meters, world): the truck parks at z = 13 with its
+    /// tail toward the pile at z ~ 6; pallets line both sides between pile and
+    /// site; the build site is at z = -11 (front facing the pile), tool rack to
+    /// its left, mortar station to its right; the player spawns at z = -1
+    /// facing the arriving truck. More teams would get their own area offset in x.
     /// </summary>
     public class SceneBuilder
     {
@@ -35,62 +40,54 @@ namespace SoapCarvers.Core
         /// Null at runtime.
         /// </summary>
         readonly Func<Object, string, Object> _persist;
+        readonly KitChoice _kit;
 
         Transform _root;
         GameSettings _settings;
         Font _font;
+        MaterialPalette _palette;
+        Material _screen, _sky;
+        readonly Dictionary<string, Material> _mats = new Dictionary<string, Material>();
 
-        // Shared materials
-        Material _grass, _wood, _darkWood, _metal, _red, _orange, _yellow, _navy, _black;
-        Material _trunk, _soapMat, _spark, _flash, _buttonRed, _scanMat, _hologram, _hologramOutline, _screen;
-        Material[] _leaves;
-
-        // Built objects that others need
         GameManager _game;
-        ItemManager _items;
-        TargetManager _targets;
-        SoapBlock _soap;
-        ScanEffect _scan;
-        BlueprintStudio _studio;
-        Transform _spawn;
         PlayerActions _player;
-        int _nextItemId = 1;
+        readonly List<TeamArea> _areas = new List<TeamArea>();
+        readonly List<Transform> _detachOrder = new List<Transform>();
+        int _nextId = 1;
 
-        static readonly Vector3 BenchCenter = new Vector3(-5.5f, 0f, -12f);
-        const float BenchTop = 0.95f;
-
-        public SceneBuilder(Func<Object, string, Object> persist = null)
+        public SceneBuilder(Func<Object, string, Object> persist = null, KitChoice kit = KitChoice.GardenShed)
         {
             _persist = persist;
+            _kit = kit;
         }
 
         // ================================================================ entry
 
         public void Build()
         {
-            var rootGo = new GameObject("__SoapCarversBuild");
+            var rootGo = new GameObject("__BuildCrewBuild");
             rootGo.SetActive(false);
             _root = rootGo.transform;
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             _settings = Persist(GameSettings.CreateDefault(), "Settings/GameSettings.asset");
             _settings.name = "GameSettings";
-            CreateMaterials();
 
             Transform managers = BuildManagers();
-            Transform soap = BuildSoap();
-            Transform environment = BuildEnvironment();
-            Transform studio = BuildStudio();
-            Transform scan = BuildScanEffect();
-            _game.Configure(_settings, _soap, _targets, _scan, _items, _spawn);
-            Transform bench = BuildWorkbenchAndTools();
-            Transform player = BuildPlayer();
-            Transform hud = BuildHud();
-            Transform eventSystem = BuildEventSystem();
+            CreateMaterials();
+            _detachOrder.Add(managers);
+            _detachOrder.Add(BuildEnvironment());
+
+            TeamArea area = BuildTeamArea(0, Vector3.zero);
+            _areas.Add(area);
+
+            _game.Configure(_settings, _kit, _areas);
+            _detachOrder.Add(BuildPlayer(area));
+            _detachOrder.Add(BuildHud());
+            _detachOrder.Add(BuildEventSystem());
 
             // Detach in dependency order (managers before the things that look them up).
-            Transform[] order = { managers, soap, studio, scan, environment, bench, player, hud, eventSystem };
-            foreach (Transform t in order) t.SetParent(null, true);
+            foreach (Transform t in _detachOrder) t.SetParent(null, true);
             while (_root.childCount > 0) _root.GetChild(0).SetParent(null, true);
             Kill(rootGo);
         }
@@ -102,37 +99,32 @@ namespace SoapCarvers.Core
             return _persist != null ? (T)_persist(asset, relativePath) : asset;
         }
 
-        Material Mat(string name, Color c, float smoothness = 0.15f, float metallic = 0f) =>
-            Persist(MaterialFactory.Lit(name, c, smoothness, metallic), $"Materials/{name}.mat");
-
         void CreateMaterials()
         {
-            _grass = Mat("Grass", new Color(0.45f, 0.74f, 0.34f), 0.05f);
-            _wood = Mat("Wood", new Color(0.72f, 0.5f, 0.3f));
-            _darkWood = Mat("DarkWood", new Color(0.45f, 0.29f, 0.18f));
-            _metal = Mat("Metal", new Color(0.78f, 0.8f, 0.84f), 0.7f, 0.6f);
-            _red = Mat("Red", new Color(0.9f, 0.22f, 0.2f), 0.3f);
-            _orange = Mat("Orange", new Color(1f, 0.55f, 0.12f), 0.35f);
-            _yellow = Mat("Yellow", new Color(1f, 0.84f, 0.25f), 0.2f);
-            _navy = Mat("Navy", new Color(0.13f, 0.17f, 0.32f), 0.4f);
-            _black = Mat("Black", new Color(0.08f, 0.08f, 0.09f), 0.3f);
-            _trunk = Mat("TreeTrunk", new Color(0.5f, 0.33f, 0.2f));
-            _leaves = new[]
+            var entries = new List<MaterialPalette.Entry>();
+            foreach (MaterialPalette.Spec spec in MaterialPalette.Defaults)
             {
-                Mat("LeavesGreen", new Color(0.32f, 0.66f, 0.3f)),
-                Mat("LeavesLime", new Color(0.55f, 0.8f, 0.3f)),
-                Mat("LeavesPink", new Color(0.98f, 0.62f, 0.75f)),
-                Mat("LeavesTeal", new Color(0.3f, 0.7f, 0.6f)),
-            };
-            _soapMat = Persist(SoapBlock.CreateSoapMaterial(_settings), "Materials/Soap.mat");
-            _spark = Persist(MaterialFactory.Emissive("Spark", new Color(1f, 0.9f, 0.4f), new Color(3f, 2.2f, 0.6f)), "Materials/Spark.mat");
-            _flash = Persist(MaterialFactory.Emissive("ExplosionFlash", new Color(1f, 0.6f, 0.2f), new Color(4f, 2f, 0.5f)), "Materials/ExplosionFlash.mat");
-            _buttonRed = Persist(MaterialFactory.Emissive("ButtonRed", new Color(1f, 0.15f, 0.12f), new Color(0.6f, 0.05f, 0.03f)), "Materials/ButtonRed.mat");
-            _scanMat = Persist(MaterialFactory.UnlitTransparent("ScanPlane", new Color(0.3f, 1f, 0.95f, 0.35f)), "Materials/ScanPlane.mat");
-            _hologram = Persist(MaterialFactory.Emissive("Hologram", new Color(0.35f, 0.85f, 1f), new Color(0.1f, 0.45f, 0.65f), 0.5f), "Materials/Hologram.mat");
-            _hologramOutline = Persist(MaterialFactory.Unlit("HologramOutline", new Color(0.45f, 0.75f, 1f)), "Materials/HologramOutline.mat");
+                Material m = Persist(MaterialPalette.Create(spec), $"Materials/{spec.Key}.mat");
+                _mats[spec.Key] = m;
+                entries.Add(new MaterialPalette.Entry { key = spec.Key, material = m });
+            }
+            _palette.SetEntries(entries);
             _screen = Persist(MaterialFactory.UnlitTexture("TabletScreen", null), "Materials/TabletScreen.mat");
+
+            Shader skyShader = Shader.Find("Skybox/Procedural");
+            if (skyShader != null)
+            {
+                var sky = new Material(skyShader) { name = "Sky" };
+                sky.SetColor("_SkyTint", new Color(0.45f, 0.65f, 1f));
+                sky.SetColor("_GroundColor", new Color(0.55f, 0.7f, 0.5f));
+                sky.SetFloat("_AtmosphereThickness", 0.75f);
+                sky.SetFloat("_Exposure", 1.25f);
+                sky.SetFloat("_SunSize", 0.05f);
+                _sky = Persist(sky, "Materials/Sky.mat");
+            }
         }
+
+        Material M(string key) => _mats.TryGetValue(key, out Material m) ? m : MaterialPalette.Create(key);
 
         // ============================================================== helpers
 
@@ -152,7 +144,7 @@ namespace SoapCarvers.Core
         }
 
         GameObject Prim(PrimitiveType type, string name, Transform parent, Vector3 localPos, Vector3 localScale,
-            Material mat, bool collider = true, Vector3? localEuler = null)
+            string mat, bool collider = true, Vector3? localEuler = null)
         {
             GameObject go = GameObject.CreatePrimitive(type);
             go.name = name;
@@ -160,9 +152,27 @@ namespace SoapCarvers.Core
             go.transform.localPosition = localPos;
             go.transform.localRotation = Quaternion.Euler(localEuler ?? Vector3.zero);
             go.transform.localScale = localScale;
-            go.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            go.GetComponent<MeshRenderer>().sharedMaterial = M(mat);
             if (!collider) Kill(go.GetComponent<Collider>());
             return go;
+        }
+
+        GameObject Box(string name, Transform parent, Vector3 pos, Vector3 size, string mat, bool collider = true, Vector3? euler = null) =>
+            Prim(PrimitiveType.Cube, name, parent, pos, size, mat, collider, euler);
+
+        /// <summary>A dynamic rigidbody object with a Grabbable (or subclass) and a "Model" child.</summary>
+        T Item<T>(string name, Transform parent, Vector3 worldPos, Quaternion worldRot, float mass, out Transform model) where T : Grabbable
+        {
+            GameObject go = Node(name, parent, Vector3.zero);
+            go.transform.SetPositionAndRotation(worldPos, worldRot);
+            var rb = go.AddComponent<Rigidbody>();
+            rb.mass = mass;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            model = Node("Model", go.transform, Vector3.zero).transform;
+            var g = go.AddComponent<T>();
+            g.Configure(_nextId++, name);
+            return g;
         }
 
         // ============================================================= managers
@@ -170,21 +180,16 @@ namespace SoapCarvers.Core
         Transform BuildManagers()
         {
             GameObject go = Node("GameManager", _root, Vector3.zero);
-            _items = go.AddComponent<ItemManager>();
-            _targets = go.AddComponent<TargetManager>();
+            go.AddComponent<CommandBus>();
+            go.AddComponent<EntityRegistry>();
+            _palette = go.AddComponent<MaterialPalette>();
+            go.AddComponent<GrabManager>();
+            var parts = go.AddComponent<PartManager>();
+            go.AddComponent<BuildManager>();
+            go.AddComponent<WorkshopManager>();
+            ShardPool shards = Node("Shards", go.transform, Vector3.zero).AddComponent<ShardPool>();
+            parts.Configure(_palette, shards);
             _game = go.AddComponent<GameManager>();
-            return go.transform;
-        }
-
-        // ================================================================= soap
-
-        Transform BuildSoap()
-        {
-            GameObject go = Node("SoapBlock", _root, Vector3.zero);
-            _soap = go.AddComponent<SoapBlock>();
-            _soap.Configure(_settings, _soapMat);
-            go.AddComponent<SoapDebrisPool>();
-            _targets.Configure(_settings, _soap);
             return go.transform;
         }
 
@@ -194,7 +199,6 @@ namespace SoapCarvers.Core
         {
             GameObject env = Node("Environment", _root, Vector3.zero);
 
-            // Sun with soft shadows.
             GameObject sunGo = Node("Sun", env.transform, new Vector3(0f, 30f, 0f), new Vector3(50f, -35f, 0f));
             var sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
@@ -203,18 +207,7 @@ namespace SoapCarvers.Core
             sun.shadows = LightShadows.Soft;
             sun.shadowStrength = 0.75f;
 
-            // Sky: procedural skybox + gradient ambient + a bit of fog for depth.
-            Shader skyShader = Shader.Find("Skybox/Procedural");
-            if (skyShader != null)
-            {
-                var sky = new Material(skyShader) { name = "Sky" };
-                sky.SetColor("_SkyTint", new Color(0.45f, 0.65f, 1f));
-                sky.SetColor("_GroundColor", new Color(0.55f, 0.7f, 0.5f));
-                sky.SetFloat("_AtmosphereThickness", 0.75f);
-                sky.SetFloat("_Exposure", 1.25f);
-                sky.SetFloat("_SunSize", 0.05f);
-                RenderSettings.skybox = Persist(sky, "Materials/Sky.mat");
-            }
+            if (_sky != null) RenderSettings.skybox = _sky;
             RenderSettings.sun = sun;
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.72f, 0.82f, 1f);
@@ -227,317 +220,454 @@ namespace SoapCarvers.Core
             RenderSettings.fogEndDistance = 260f;
 
             // Ground: Unity's plane is 10x10 m, so scale 30 = 300 m.
-            Prim(PrimitiveType.Plane, "Ground", env.transform, Vector3.zero, new Vector3(30f, 1f, 30f), _grass);
+            Prim(PrimitiveType.Plane, "Ground", env.transform, Vector3.zero, new Vector3(30f, 1f, 30f), "ground");
 
-            // Low-poly trees in a ring around the play area (seeded: same every build).
+            // Low-poly trees in a ring (seeded: same every build).
             var rng = new System.Random(1234);
+            string[] leaves = { "leavesGreen", "leavesLime", "leavesPink", "leavesTeal" };
             Transform trees = Node("Trees", env.transform, Vector3.zero).transform;
-            for (int i = 0; i < 22; i++)
+            for (int i = 0; i < 24; i++)
             {
-                float angle = (float)(i / 22.0 * Math.PI * 2 + rng.NextDouble() * 0.2);
-                float dist = 32f + (float)rng.NextDouble() * 45f;
+                float angle = (float)(i / 24.0 * Math.PI * 2 + rng.NextDouble() * 0.2);
+                float dist = 40f + (float)rng.NextDouble() * 45f;
                 var pos = new Vector3(Mathf.Cos(angle) * dist, 0f, Mathf.Sin(angle) * dist);
+                if (Mathf.Abs(pos.x) < 8f && pos.z > 0f) continue; // keep the truck road clear
                 float h = 3f + (float)rng.NextDouble() * 4f;
                 Transform tree = Node("Tree", trees, pos, new Vector3(0f, (float)rng.NextDouble() * 360f, 0f)).transform;
-                Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, h * 0.5f, 0f), new Vector3(0.6f, h * 0.5f, 0.6f), _trunk);
+                Prim(PrimitiveType.Cylinder, "Trunk", tree, new Vector3(0f, h * 0.5f, 0f), new Vector3(0.6f, h * 0.5f, 0.6f), "trunk");
                 float crown = 2.5f + (float)rng.NextDouble() * 2.5f;
                 Prim(PrimitiveType.Sphere, "Crown", tree, new Vector3(0f, h + crown * 0.3f, 0f),
-                    new Vector3(crown, crown * 0.85f, crown), _leaves[rng.Next(_leaves.Length)]);
+                    new Vector3(crown, crown * 0.85f, crown), leaves[rng.Next(leaves.Length)]);
             }
-
-            // Player spawn: a few meters in front of the block's -Z face, facing it.
-            _spawn = Node("PlayerSpawn", env.transform, new Vector3(0f, 0.05f, -14f)).transform;
             return env.transform;
         }
 
-        // ======================================================= studio + scan
+        // ============================================================ team area
 
-        Transform BuildStudio()
+        TeamArea BuildTeamArea(int team, Vector3 origin)
+        {
+            GameObject areaGo = Node($"TeamArea {team}", _root, origin);
+            Transform a = areaGo.transform;
+            _detachOrder.Add(a);
+            var area = areaGo.AddComponent<TeamArea>();
+
+            // Road for the truck and a dirt plot for the building.
+            Box("Road", a, new Vector3(0f, 0.005f, 45f), new Vector3(5f, 0.01f, 70f), "road", false);
+            Box("PileDirt", a, new Vector3(0f, 0.004f, 6f), new Vector3(11f, 0.008f, 9f), "dirt", false);
+            Box("SitePlot", a, new Vector3(0f, 0.004f, -11f), new Vector3(12f, 0.008f, 11f), "dirt", false);
+
+            // A few bumps between pile and site: uneven ground for the wheelbarrow.
+            Box("Bump", a, new Vector3(2.5f, 0f, -2.5f), new Vector3(2.2f, 0.18f, 0.8f), "dirt", true, new Vector3(0f, 20f, 0f));
+            Box("Bump", a, new Vector3(-1.8f, 0f, -4.2f), new Vector3(1.6f, 0.22f, 0.9f), "dirt", true, new Vector3(0f, -35f, 4f));
+            Box("Bump", a, new Vector3(0.6f, 0f, 1.2f), new Vector3(1.4f, 0.14f, 1.1f), "dirt", true, new Vector3(3f, 60f, 0f));
+
+            Transform spawn = Node("PlayerSpawn", a, new Vector3(0f, 0.05f, -1f)).transform;
+
+            // Build site: kit front (-z in kit space) faces the pile (+z world).
+            GameObject siteGo = Node("BuildSite", a, new Vector3(0f, 0f, -11f), new Vector3(0f, 180f, 0f));
+            var site = siteGo.AddComponent<BuildSite>();
+            site.Configure(team, team);
+
+            BlueprintStudio studio = BuildStudio(team, site);
+            Truck truck = BuildTruck(a, new Vector3(0f, 0f, 13f));
+            FinalTestDirector test = BuildFinalTest(a, site);
+            List<SortingZone> zones = BuildPallets(a, team);
+            BuildMortarStation(a, new Vector3(9.5f, 0f, -9f));
+            Transform supply = BuildToolRack(a, new Vector3(-9.5f, 0f, -9f), area);
+            BuildLadder(a, new Vector3(-6.5f, 0.05f, -16.5f));
+            BuildWheelbarrow(a, new Vector3(3.2f, 0f, -0.5f));
+            BuildBell(a, new Vector3(5.5f, 0f, -5.5f));
+
+            area.Configure(team, site, truck, test, studio, zones, spawn, supply);
+            return area;
+        }
+
+        BlueprintStudio BuildStudio(int team, BuildSite site)
         {
             // Far above the world (and shadow-less) so nothing can see or touch it.
-            GameObject go = Node("BlueprintStudio", _root, new Vector3(0f, 1500f, 0f));
-            _studio = go.AddComponent<BlueprintStudio>();
-            _studio.Configure(_targets, _hologram, _hologramOutline);
-            return go.transform;
+            GameObject go = Node($"BlueprintStudio {team}", _root, new Vector3(team * 100f, 1500f, 0f));
+            _detachOrder.Add(go.transform);
+            var studio = go.AddComponent<BlueprintStudio>();
+            studio.Configure(site);
+            return studio;
         }
 
-        Transform BuildScanEffect()
+        FinalTestDirector BuildFinalTest(Transform area, BuildSite site)
         {
-            GameObject go = Node("ScanEffect", _root, Vector3.zero);
-            GameObject plane = Prim(PrimitiveType.Cube, "ScanPlane", go.transform, Vector3.zero, Vector3.one, _scanMat, false);
-            plane.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
-            GameObject lightGo = Node("ScanLight", go.transform, Vector3.zero);
-            var l = lightGo.AddComponent<Light>();
-            l.type = LightType.Point;
-            l.color = new Color(0.35f, 1f, 0.95f);
-            l.range = _settings.blockSize * 1.4f;
-            l.intensity = 6f;
-            _scan = go.AddComponent<ScanEffect>();
-            _scan.Configure(_soap, plane.transform, l);
-            return go.transform;
+            GameObject go = Node("FinalTest", area, Vector3.zero);
+            // Tripod camera: front-left of the site, looking at the building.
+            Vector3 sitePos = site.transform.localPosition;
+            GameObject camGo = Node("FinalTestCamera", go.transform, sitePos + new Vector3(-11f, 6.5f, 11f));
+            camGo.transform.LookAt(area.TransformPoint(sitePos + Vector3.up * 2f));
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = 55f;
+            cam.cullingMask = ~(1 << Layers.Hologram);
+            cam.depth = 5;
+            cam.enabled = false;
+            var director = go.AddComponent<FinalTestDirector>();
+            director.Configure(site, cam, M("rain"));
+            return director;
         }
 
-        // ===================================================== workbench & tools
+        // ================================================================ truck
 
-        Transform BuildWorkbenchAndTools()
+        Truck BuildTruck(Transform area, Vector3 parkPos)
         {
-            GameObject bench = Node("Workbench", _root, BenchCenter);
-            Transform b = bench.transform;
-            const float w = 3.2f, d = 1.1f;
-            Prim(PrimitiveType.Cube, "Top", b, new Vector3(0f, BenchTop - 0.04f, 0f), new Vector3(w, 0.08f, d), _wood);
+            const float bedLength = 6.2f, bedWidth = 2.3f, floorT = 0.1f, wallH = 0.75f;
+            var hinge = new Vector3(0f, 1.15f, -3.5f);
+
+            GameObject truckGo = Node("Truck", area, parkPos);
+            var chassis = truckGo.AddComponent<Rigidbody>();
+            chassis.isKinematic = true;
+            chassis.interpolation = RigidbodyInterpolation.Interpolate;
+            Transform t = truckGo.transform;
+            Box("Frame", t, new Vector3(0f, 0.85f, 0f), new Vector3(2.2f, 0.35f, 8.4f), "black");
+            Box("Cab", t, new Vector3(0f, 2.0f, 3.65f), new Vector3(2.5f, 2.0f, 1.9f), "truck");
+            Box("Windshield", t, new Vector3(0f, 2.35f, 4.61f), new Vector3(2.2f, 0.8f, 0.04f), "glass", false);
+            Box("Bumper", t, new Vector3(0f, 0.7f, 4.7f), new Vector3(2.6f, 0.3f, 0.2f), "metal");
+            Box("Light", t, new Vector3(0.9f, 1.25f, 4.62f), new Vector3(0.3f, 0.2f, 0.04f), "yellow", false);
+            Box("Light", t, new Vector3(-0.9f, 1.25f, 4.62f), new Vector3(0.3f, 0.2f, 0.04f), "yellow", false);
+            foreach (float z in new[] { -2.6f, -1.5f, 3.4f })
+            for (int s = -1; s <= 1; s += 2)
+                Prim(PrimitiveType.Cylinder, "Wheel", t, new Vector3(s * 1.15f, 0.55f, z), new Vector3(1.1f, 0.18f, 1.1f), "rubber", false,
+                    new Vector3(0f, 0f, 90f));
+
+            // Bed: its own kinematic body, pivot on the rear hinge, floor running toward the cab.
+            GameObject bedGo = Node("TruckBed", area, parkPos + hinge);
+            var bed = bedGo.AddComponent<Rigidbody>();
+            bed.isKinematic = true;
+            bed.interpolation = RigidbodyInterpolation.Interpolate;
+            Transform b = bedGo.transform;
+            Box("Floor", b, new Vector3(0f, floorT * 0.5f, bedLength * 0.5f), new Vector3(bedWidth + 0.2f, floorT, bedLength), "truck");
+            for (int s = -1; s <= 1; s += 2)
+                Box("Side", b, new Vector3(s * (bedWidth * 0.5f + 0.05f), floorT + wallH * 0.5f, bedLength * 0.5f),
+                    new Vector3(0.1f, wallH, bedLength), "truck");
+            Box("Front", b, new Vector3(0f, floorT + wallH * 0.8f, bedLength + 0.05f), new Vector3(bedWidth + 0.2f, wallH * 1.6f, 0.1f), "truck");
+            GameObject cargo = Box("CoveredLoad", b, new Vector3(0f, floorT + 0.75f, bedLength * 0.5f),
+                new Vector3(bedWidth - 0.05f, 1.5f, bedLength - 0.2f), "tarp", false);
+
+            var truck = truckGo.AddComponent<Truck>();
+            truck.Configure(chassis, bed, cargo, hinge, bedLength, bedWidth, floorT);
+            return truck;
+        }
+
+        // ============================================================== pallets
+
+        List<SortingZone> BuildPallets(Transform area, int team)
+        {
+            var zones = new List<SortingZone>();
+            // (category, label, position, deck size)
+            var defs = new (PartCategory cat, string title, Vector3 pos, Vector2 size)[]
+            {
+                (PartCategory.Wood, "WOOD", new Vector3(-7.5f, 0f, 3f), new Vector2(4.4f, 1.6f)),
+                (PartCategory.Stone, "STONE", new Vector3(-7.5f, 0f, -0.5f), new Vector2(3.2f, 1.6f)),
+                (PartCategory.Roof, "ROOF", new Vector3(-7.5f, 0f, -4f), new Vector2(3.4f, 1.8f)),
+                (PartCategory.Glass, "GLASS", new Vector3(7.5f, 0f, 3f), new Vector2(2.4f, 1.6f)),
+                (PartCategory.ReadyMade, "READY-MADE", new Vector3(7.5f, 0f, -0.5f), new Vector2(3.2f, 2.4f)),
+                (PartCategory.Fixings, "FIXINGS", new Vector3(7.5f, 0f, -4f), new Vector2(1.6f, 1.2f)),
+            };
+            foreach (var d in defs)
+            {
+                // Pallets are objects too: heavy, draggable rigidbodies. Long side along z.
+                var pallet = Item<Grabbable>($"Pallet {d.title}", area, area.TransformPoint(d.pos), area.rotation, 25f, out Transform m);
+                float w = d.size.y, l = d.size.x;
+                const float h = 0.14f;
+                for (int i = 0; i < 3; i++)
+                    Box("Runner", m, new Vector3((i - 1) * (w * 0.5f - 0.05f), 0.05f, 0f), new Vector3(0.1f, 0.1f, l), "darkWood");
+                Box("Deck", m, new Vector3(0f, h - 0.02f, 0f), new Vector3(w, 0.04f, l), "pallet");
+                for (int i = 0; i < 4; i++)
+                    Box("Slat", m, new Vector3(0f, h + 0.002f, (i - 1.5f) * l / 4f), new Vector3(w, 0.006f, 0.1f), "darkWood", false);
+
+                // Zone above the deck; label above that, turning to face the camera.
+                GameObject zoneGo = Node("SortingZone", pallet.transform, new Vector3(0f, h, 0f));
+                GameObject canvasGo = Node("Label", pallet.transform, new Vector3(0f, 2.1f, 0f));
+                Text label = WorldText(canvasGo, new Vector2(420f, 320f), 0.005f, 30, TextAnchor.LowerCenter);
+                canvasGo.AddComponent<WorldLabel>();
+                var zone = zoneGo.AddComponent<SortingZone>();
+                zone.Configure(d.cat, d.title, new Vector3(w * 0.5f + 0.1f, 0.9f, l * 0.5f + 0.1f), label, team);
+                zones.Add(zone);
+            }
+            return zones;
+        }
+
+        /// <summary>World-space canvas with one text; 1 canvas unit = <paramref name="scale"/> meters.</summary>
+        Text WorldText(GameObject canvasGo, Vector2 size, float scale, int fontSize, TextAnchor align)
+        {
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            var rt = canvasGo.GetComponent<RectTransform>();
+            rt.sizeDelta = size;
+            rt.localScale = Vector3.one * scale;
+            canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 3f;
+            Text t = MakeText(canvasGo.transform, "Text", fontSize, align, FontStyle.Normal,
+                Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, Vector2.zero);
+            t.rectTransform.offsetMin = t.rectTransform.offsetMax = Vector2.zero;
+            t.supportRichText = true;
+            return t;
+        }
+
+        // ======================================================= mortar station
+
+        void BuildMortarStation(Transform area, Vector3 pos)
+        {
+            Quaternion rot = area.rotation * Quaternion.Euler(0f, -90f, 0f); // long side facing the site
+            var station = Item<Grabbable>("Mortar Station", area, area.TransformPoint(pos), rot, 220f, out Transform m);
+            Box("Top", m, new Vector3(0f, 0.85f, 0f), new Vector3(2.6f, 0.08f, 1f), "darkWood");
             for (int sx = -1; sx <= 1; sx += 2)
             for (int sz = -1; sz <= 1; sz += 2)
-                Prim(PrimitiveType.Cube, "Leg", b, new Vector3(sx * (w * 0.5f - 0.1f), (BenchTop - 0.08f) * 0.5f, sz * (d * 0.5f - 0.1f)),
-                    new Vector3(0.1f, BenchTop - 0.08f, 0.1f), _darkWood);
-            Prim(PrimitiveType.Cube, "Shelf", b, new Vector3(0f, 0.25f, 0f), new Vector3(w - 0.2f, 0.05f, d - 0.2f), _darkWood);
+                Box("Leg", m, new Vector3(sx * 1.2f, 0.4f, sz * 0.42f), new Vector3(0.1f, 0.8f, 0.1f), "darkWood");
 
-            // Start button on a little pedestal at the right end.
-            GameObject pedestal = Prim(PrimitiveType.Cube, "StartButton", b, new Vector3(1.38f, BenchTop + 0.06f, -0.3f),
-                new Vector3(0.24f, 0.12f, 0.24f), _black);
-            // Unscaled holder so the cap isn't squashed by the pedestal scale.
-            GameObject buttonRoot = Node("StartButtonRoot", b, pedestal.transform.localPosition);
-            pedestal.transform.SetParent(buttonRoot.transform, true);
-            GameObject cap = Prim(PrimitiveType.Cylinder, "Cap", buttonRoot.transform, new Vector3(0f, 0.08f, 0f),
-                new Vector3(0.16f, 0.025f, 0.16f), _buttonRed);
-            buttonRoot.AddComponent<StartButton>().Configure(_game, cap.transform);
+            // Cement bag on the table (left), sand heap on the ground (right), tap at the back.
+            GameObject cement = Box("CementBag", m, new Vector3(-0.85f, 1.05f, 0.15f), new Vector3(0.6f, 0.32f, 0.45f), "cement");
+            Box("Print", m, new Vector3(-0.85f, 1.05f, -0.08f), new Vector3(0.35f, 0.15f, 0.01f), "red", false);
+            cement.AddComponent<Dispenser>().Configure(Ingredient.Cement);
 
-            float y = BenchTop + 0.06f;
-            Vector3 world(float x, float z) => BenchCenter + new Vector3(x, y, z);
+            GameObject sand = Prim(PrimitiveType.Sphere, "SandHeap", m, new Vector3(1.8f, 0.23f, 0f), new Vector3(1.1f, 0.45f, 1.1f), "sand");
+            sand.AddComponent<Dispenser>().Configure(Ingredient.Sand);
 
-            BuildKnife(world(-1.35f, -0.1f), Quaternion.Euler(0f, 10f, 90f));
-            BuildPickaxe(world(-0.8f, -0.45f), Quaternion.Euler(0f, 90f, 90f));
-            BuildChainsaw(world(-0.15f, -0.4f) + Vector3.up * 0.07f, Quaternion.identity);
-            BuildDynamite(world(0.45f, -0.1f), Quaternion.Euler(0f, 30f, 90f), false);
-            BuildTablet(world(0.95f, 0.1f) + Vector3.down * 0.03f, Quaternion.Euler(90f, 0f, 0f));
+            Box("TapPost", m, new Vector3(0.2f, 1.3f, 0.45f), new Vector3(0.08f, 0.9f, 0.08f), "metal");
+            GameObject tap = Prim(PrimitiveType.Cylinder, "Tap", m, new Vector3(0.2f, 1.62f, 0.3f), new Vector3(0.07f, 0.15f, 0.07f), "metal",
+                true, new Vector3(90f, 0f, 0f));
+            Box("TapHandle", m, new Vector3(0.2f, 1.72f, 0.3f), new Vector3(0.16f, 0.03f, 0.03f), "red", false);
+            tap.AddComponent<Dispenser>().Configure(Ingredient.Water);
 
-            // Dynamite respawner: clones an inactive template stick.
-            Dynamite template = BuildDynamite(BenchCenter + new Vector3(0.45f, -5f, 0f), Quaternion.identity, true);
-            template.gameObject.SetActive(false);
-            template.transform.SetParent(b, true);
-            GameObject spawnPoint = Node("DynamiteSpawnPoint", b, new Vector3(0.45f, BenchTop + 0.1f, 0.2f));
-            bench.AddComponent<DynamiteSpawner>().Configure(template, spawnPoint.transform,
-                _settings.dynamiteRespawnSeconds, _settings.dynamiteMaxLying);
+            GameObject sign = Node("RecipeSign", m, new Vector3(0f, 1.6f, 0.52f), new Vector3(0f, 180f, 0f));
+            Text t = WorldText(sign, new Vector2(300f, 90f), 0.004f, 26, TextAnchor.MiddleCenter);
+            t.text = "<b>MORTAR</b>\n1 cement : 3 sand : 1 water\nthen stir with the shovel";
 
-            // Ladder leaning against the soap's front face, right of the spawn.
-            // Base is set back so the top just rests on the face (physics keeps it there).
-            const float ladderLength = 12f, ladderLean = 16f;
-            float face = -(_settings.blockSize * 0.5f - _settings.voxelSize * 0.5f);
-            float setBack = ladderLength * Mathf.Sin(ladderLean * Mathf.Deg2Rad) + 0.05f;
-            BuildLadder(new Vector3(3f, 0.02f, face - setBack), Quaternion.Euler(ladderLean, 0f, 0f), ladderLength, ladderLean);
-
-            // Rolling scaffold towers to the right of the spawn, brakes on.
-            BuildScaffold("Scaffold_Low", new Vector3(6.5f, 0f, -12f), 4.5f);
-            BuildScaffold("Scaffold_Mid", new Vector3(9.5f, 0f, -12f), 8.5f);
-            BuildScaffold("Scaffold_High", new Vector3(12.5f, 0f, -12f), 12.5f);
-            return b;
+            // Two buckets on the table and the shovel leaning on it.
+            for (int i = 0; i < 2; i++)
+                BuildBucket(station.transform.TransformPoint(new Vector3(0.05f + i * 0.45f, 0.9f, -0.15f)), rot);
+            BuildShovel(station.transform.TransformPoint(new Vector3(-0.3f, 0.1f, -0.85f)), rot * Quaternion.Euler(0f, 0f, 90f));
         }
 
-        /// <summary>Common item root: rigidbody + Holdable/Tool subclass + "Model" child.</summary>
-        T ItemRoot<T>(string name, Vector3 pos, Quaternion rot, float mass, out Transform model) where T : Holdable
+        void BuildBucket(Vector3 pos, Quaternion rot)
         {
-            GameObject go = Node(name, _root, Vector3.zero);
-            go.transform.SetPositionAndRotation(pos, rot);
-            var rb = go.AddComponent<Rigidbody>();
-            rb.mass = mass;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            model = Node("Model", go.transform, Vector3.zero).transform;
-            return go.AddComponent<T>();
+            var bucket = Item<Bucket>("Bucket", _root, pos, rot, 1.5f, out Transform m);
+            const float r = 0.17f, h = 0.34f;
+            Box("Bottom", m, new Vector3(0f, 0.01f, 0f), new Vector3(r * 2f, 0.02f, r * 2f), "orange");
+            // Eight staves make an open-top bucket; only four wall colliders.
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * 45f;
+                Vector3 p = Quaternion.Euler(0f, a, 0f) * new Vector3(0f, h * 0.5f, r);
+                Box("Stave", m, p, new Vector3(r * 0.85f, h, 0.02f), "orange", i % 2 == 0, new Vector3(0f, a, 0f));
+            }
+            Box("Handle", m, new Vector3(0f, h + 0.08f, 0f), new Vector3(r * 2f, 0.015f, 0.015f), "black", false);
+            GameObject contents = Prim(PrimitiveType.Cylinder, "Contents", m, new Vector3(0f, 0.05f, 0f), new Vector3(r * 1.8f, 0.02f, r * 1.8f),
+                "cement", false);
+            contents.SetActive(false);
+            bucket.SetParts(contents.transform, contents.GetComponent<MeshRenderer>(), h - 0.04f);
         }
 
-        void BuildKnife(Vector3 pos, Quaternion rot)
+        // ============================================================ tool rack
+
+        Transform BuildToolRack(Transform area, Vector3 pos, TeamArea teamArea)
         {
-            var knife = ItemRoot<CarvingKnife>("CarvingKnife", pos, rot, 0.4f, out Transform m);
-            Prim(PrimitiveType.Cube, "Handle", m, Vector3.zero, new Vector3(0.04f, 0.04f, 0.14f), _darkWood);
-            Prim(PrimitiveType.Cube, "Guard", m, new Vector3(0f, 0f, 0.075f), new Vector3(0.07f, 0.05f, 0.012f), _metal);
-            Prim(PrimitiveType.Cube, "Blade", m, new Vector3(0f, 0.004f, 0.19f), new Vector3(0.01f, 0.04f, 0.22f), _metal);
-            knife.Configure(_nextItemId++, "Carving Knife", new Vector3(0.28f, -0.27f, 0.45f), new Vector3(5f, -5f, 0f));
-            knife.SetModel(m);
+            Quaternion rot = area.rotation * Quaternion.Euler(0f, 90f, 0f);
+            var rack = Item<Grabbable>("Tool Rack", area, area.TransformPoint(pos), rot, 70f, out Transform m);
+            const float w = 3.4f, d = 0.7f;
+            foreach (float y in new[] { 0.45f, 1.0f })
+                Box("Shelf", m, new Vector3(0f, y, 0f), new Vector3(w, 0.05f, d), "darkWood");
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+                Box("Leg", m, new Vector3(sx * (w * 0.5f - 0.05f), 0.55f, sz * (d * 0.5f - 0.05f)), new Vector3(0.08f, 1.1f, 0.08f), "darkWood");
+            Box("Back", m, new Vector3(0f, 1.6f, d * 0.5f - 0.02f), new Vector3(w, 1.1f, 0.04f), "pallet");
+
+            Transform rt = rack.transform;
+            Vector3 Top(float x, float z = -0.05f) => rt.TransformPoint(new Vector3(x, 1.04f, z));
+            Quaternion lying = rot * Quaternion.Euler(0f, 0f, 90f);
+            BuildHammer(Top(-1.45f), lying);
+            BuildHammer(Top(-1.15f), lying);
+            BuildScrewdriver(Top(-0.85f), rot);
+            BuildSaw(Top(-0.5f), rot * Quaternion.Euler(0f, 0f, 90f));
+            BuildSaw(Top(-0.05f), rot * Quaternion.Euler(0f, 0f, 90f));
+            BuildGlassCutter(Top(0.4f), rot);
+            BuildTrowel(Top(0.7f), rot);
+            BuildTablet(Top(1.2f, -0.1f) + Vector3.up * 0.03f, rot * Quaternion.Euler(80f, 0f, 0f), teamArea);
+
+            // Starter fixings appear on the lower shelf each round.
+            GameObject supply = Node("SupplyPoint", rt, new Vector3(-1f, 0.6f, -0.05f));
+            return supply.transform;
         }
 
-        void BuildPickaxe(Vector3 pos, Quaternion rot)
+        void BuildHammer(Vector3 pos, Quaternion rot)
         {
-            var pick = ItemRoot<Pickaxe>("Pickaxe", pos, rot, 2.5f, out Transform m);
-            Prim(PrimitiveType.Cube, "Handle", m, new Vector3(0f, 0.35f, 0f), new Vector3(0.05f, 0.9f, 0.05f), _wood);
-            Prim(PrimitiveType.Cube, "Head", m, new Vector3(0f, 0.78f, 0f), new Vector3(0.07f, 0.09f, 0.5f), _metal);
-            Prim(PrimitiveType.Cube, "TipFront", m, new Vector3(0f, 0.76f, 0.3f), new Vector3(0.05f, 0.05f, 0.14f), _metal, true, new Vector3(-15f, 0f, 0f));
-            Prim(PrimitiveType.Cube, "TipBack", m, new Vector3(0f, 0.76f, -0.3f), new Vector3(0.05f, 0.05f, 0.14f), _metal, true, new Vector3(15f, 0f, 0f));
-            pick.Configure(_nextItemId++, "Pickaxe", new Vector3(0.38f, -0.55f, 0.55f), new Vector3(15f, 0f, 0f));
-            pick.SetModel(m);
+            var hammer = Item<Hammer>("Hammer", _root, pos, rot, 0.8f, out Transform m);
+            Box("Handle", m, new Vector3(0f, 0.14f, 0f), new Vector3(0.035f, 0.34f, 0.035f), "wood");
+            Box("Grip", m, new Vector3(0f, 0.02f, 0f), new Vector3(0.042f, 0.1f, 0.042f), "black");
+            Box("Head", m, new Vector3(0f, 0.31f, 0.02f), new Vector3(0.045f, 0.05f, 0.15f), "metal");
+            hammer.ConfigureGrip(new Vector3(0f, 0.03f, 0f), new Vector3(0.3f, -0.32f, 0.55f), new Vector3(-10f, 0f, 0f));
         }
 
-        void BuildChainsaw(Vector3 pos, Quaternion rot)
+        void BuildScrewdriver(Vector3 pos, Quaternion rot)
         {
-            var saw = ItemRoot<Chainsaw>("Chainsaw", pos, rot, 4f, out Transform m);
-            Prim(PrimitiveType.Cube, "Body", m, Vector3.zero, new Vector3(0.17f, 0.2f, 0.36f), _orange);
-            Prim(PrimitiveType.Cube, "Handle", m, new Vector3(0f, 0.15f, -0.02f), new Vector3(0.035f, 0.05f, 0.24f), _black);
-            Prim(PrimitiveType.Cube, "Bar", m, new Vector3(0f, -0.03f, 0.6f), new Vector3(0.025f, 0.1f, 0.84f), _metal);
-            Prim(PrimitiveType.Cube, "Chain", m, new Vector3(0f, -0.03f, 0.6f), new Vector3(0.018f, 0.12f, 0.86f), _black, false);
-            Transform start = Node("BladeStart", m, new Vector3(0f, -0.03f, 0.25f)).transform;
-            Transform end = Node("BladeEnd", m, new Vector3(0f, -0.03f, 1.0f)).transform;
-            saw.Configure(_nextItemId++, "Chainsaw", new Vector3(0.3f, -0.42f, 0.4f), new Vector3(-3f, -4f, 0f));
-            saw.SetParts(m, start, end);
+            var sd = Item<Screwdriver>("Screwdriver", _root, pos, rot, 0.25f, out Transform m);
+            Prim(PrimitiveType.Cylinder, "Handle", m, Vector3.zero, new Vector3(0.035f, 0.055f, 0.035f), "yellow", true, new Vector3(90f, 0f, 0f));
+            Prim(PrimitiveType.Cylinder, "Shaft", m, new Vector3(0f, 0f, 0.12f), new Vector3(0.008f, 0.07f, 0.008f), "metal", false,
+                new Vector3(90f, 0f, 0f));
+            sd.ConfigureGrip(Vector3.zero, new Vector3(0.24f, -0.24f, 0.5f), new Vector3(5f, 0f, 0f));
         }
 
-        Dynamite BuildDynamite(Vector3 pos, Quaternion rot, bool isTemplate)
+        void BuildSaw(Vector3 pos, Quaternion rot)
         {
-            var stick = ItemRoot<Dynamite>(isTemplate ? "DynamiteTemplate" : "Dynamite", pos, rot, 0.5f, out Transform m);
-            Prim(PrimitiveType.Cylinder, "Stick", m, Vector3.zero, new Vector3(0.07f, 0.12f, 0.07f), _red);
-            Prim(PrimitiveType.Cylinder, "Band", m, new Vector3(0f, 0.06f, 0f), new Vector3(0.074f, 0.012f, 0.074f), _black, false);
-            Prim(PrimitiveType.Cylinder, "Fuse", m, new Vector3(0f, 0.15f, 0f), new Vector3(0.01f, 0.035f, 0.01f), _black, false);
-            GameObject spark = Prim(PrimitiveType.Sphere, "Spark", m, new Vector3(0f, 0.19f, 0f), Vector3.one * 0.07f, _spark, false);
-            spark.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
-            var light = spark.AddComponent<Light>();
-            light.type = LightType.Point;
-            light.color = new Color(1f, 0.75f, 0.3f);
-            light.range = 2.5f;
-            light.intensity = 2f;
-            stick.Configure(isTemplate ? 0 : _nextItemId++, "Dynamite", new Vector3(0.3f, -0.3f, 0.5f), new Vector3(-25f, 0f, 0f));
-            stick.SetParts(spark, light, _flash);
-            return stick;
+            var saw = Item<Saw>("Saw", _root, pos, rot, 0.9f, out Transform m);
+            Box("Blade", m, new Vector3(0f, -0.01f, 0.1f), new Vector3(0.004f, 0.13f, 0.58f), "metal");
+            Box("Teeth", m, new Vector3(0f, -0.08f, 0.1f), new Vector3(0.006f, 0.015f, 0.58f), "black", false);
+            Box("Handle", m, new Vector3(0f, 0.02f, -0.24f), new Vector3(0.035f, 0.13f, 0.13f), "red");
+            saw.ConfigureGrip(new Vector3(0f, 0.02f, -0.24f), new Vector3(0.24f, -0.3f, 0.48f), new Vector3(20f, 0f, 0f));
         }
 
-        void BuildTablet(Vector3 pos, Quaternion rot)
+        void BuildGlassCutter(Vector3 pos, Quaternion rot)
         {
-            var tablet = ItemRoot<BlueprintTablet>("BlueprintTablet", pos, rot, 0.8f, out Transform m);
-            Prim(PrimitiveType.Cube, "Body", m, Vector3.zero, new Vector3(0.5f, 0.36f, 0.03f), _navy);
+            var gc = Item<GlassCutter>("Glass Cutter", _root, pos, rot, 0.15f, out Transform m);
+            Prim(PrimitiveType.Cylinder, "Handle", m, Vector3.zero, new Vector3(0.025f, 0.07f, 0.025f), "blue", true, new Vector3(90f, 0f, 0f));
+            Box("Head", m, new Vector3(0f, 0f, 0.085f), new Vector3(0.012f, 0.03f, 0.03f), "metal", false);
+            Prim(PrimitiveType.Cylinder, "Wheel", m, new Vector3(0f, -0.01f, 0.1f), new Vector3(0.015f, 0.002f, 0.015f), "metal", false,
+                new Vector3(0f, 0f, 90f));
+            gc.ConfigureGrip(Vector3.zero, new Vector3(0.22f, -0.22f, 0.45f), new Vector3(35f, 0f, 0f));
+        }
+
+        void BuildTrowel(Vector3 pos, Quaternion rot)
+        {
+            var trowel = Item<Trowel>("Trowel", _root, pos, rot, 0.45f, out Transform m);
+            Prim(PrimitiveType.Cylinder, "Handle", m, Vector3.zero, new Vector3(0.03f, 0.05f, 0.03f), "wood", true, new Vector3(90f, 0f, 0f));
+            Box("Neck", m, new Vector3(0f, -0.02f, 0.06f), new Vector3(0.01f, 0.04f, 0.02f), "metal", false);
+            Box("Blade", m, new Vector3(0f, -0.04f, 0.15f), new Vector3(0.12f, 0.004f, 0.12f), "metal", true, new Vector3(0f, 45f, 0f));
+            GameObject blob = Prim(PrimitiveType.Sphere, "Mortar", m, new Vector3(0f, -0.02f, 0.15f), new Vector3(0.1f, 0.04f, 0.1f),
+                "mortarFresh", false);
+            blob.SetActive(false);
+            trowel.SetBlob(blob);
+            trowel.ConfigureGrip(Vector3.zero, new Vector3(0.25f, -0.25f, 0.5f), new Vector3(15f, 0f, 0f));
+        }
+
+        void BuildShovel(Vector3 pos, Quaternion rot)
+        {
+            var shovel = Item<Shovel>("Shovel", _root, pos, rot, 2f, out Transform m);
+            Prim(PrimitiveType.Cylinder, "Shaft", m, Vector3.zero, new Vector3(0.04f, 0.55f, 0.04f), "wood");
+            Box("Blade", m, new Vector3(0f, -0.65f, 0f), new Vector3(0.24f, 0.28f, 0.02f), "metal");
+            Box("Grip", m, new Vector3(0f, 0.58f, 0f), new Vector3(0.14f, 0.04f, 0.04f), "black", false);
+            // Blade forward and down (see SETUP.md: hold pose tuning).
+            shovel.ConfigureGrip(new Vector3(0f, 0.35f, 0f), new Vector3(0.2f, -0.15f, 0.55f), new Vector3(-45f, 0f, 0f));
+        }
+
+        void BuildTablet(Vector3 pos, Quaternion rot, TeamArea teamArea)
+        {
+            var tablet = Item<BlueprintTablet>("Blueprint Tablet", _root, pos, rot, 0.9f, out Transform m);
+            const float tw = 0.7f, th = 0.45f;
+            Box("Body", m, Vector3.zero, new Vector3(tw, th, 0.03f), "black");
             // Quad faces -Z: the side that looks at the camera when held.
-            GameObject screen = Prim(PrimitiveType.Quad, "Screen", m, new Vector3(0f, 0f, -0.0165f), new Vector3(0.46f, 0.32f, 1f), _screen, false);
+            GameObject screen = Prim(PrimitiveType.Quad, "Screen", m, new Vector3(-0.13f, -0.015f, -0.0165f), new Vector3(0.4f, 0.4f, 1f), "black", false);
+            screen.GetComponent<MeshRenderer>().sharedMaterial = _screen;
             screen.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
 
             // World-space canvas overlay: 1 canvas unit = 1 mm.
             GameObject canvasGo = Node("ScreenCanvas", m, new Vector3(0f, 0f, -0.018f));
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
-            // Adding a Canvas swaps Transform for RectTransform; re-apply the pose to be safe.
             var rt = canvasGo.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(460f, 320f);
+            rt.sizeDelta = new Vector2(tw * 1000f, th * 1000f);
             rt.localPosition = new Vector3(0f, 0f, -0.018f);
             rt.localRotation = Quaternion.identity;
             rt.localScale = Vector3.one * 0.001f;
-            // Rasterize glyphs at 3x so the small world-space text isn't blurry up close.
             canvasGo.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 3f;
 
-            Text title = MakeText(canvasGo.transform, "Title", 24, TextAnchor.UpperLeft, FontStyle.Bold,
-                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -36f), new Vector2(-16f, 0f), new Vector2(8f, 0f));
-            Text timer = MakeText(canvasGo.transform, "Timer", 24, TextAnchor.UpperRight, FontStyle.Bold,
-                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -36f), new Vector2(-16f, 0f), new Vector2(-8f, 0f));
-            Text view = MakeText(canvasGo.transform, "Views", 18, TextAnchor.LowerCenter, FontStyle.Normal,
-                new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 30f), new Vector2(0f, 0f), new Vector2(0f, 4f));
+            Text title = MakeText(canvasGo.transform, "Title", 18, TextAnchor.UpperLeft, FontStyle.Bold,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -26f), new Vector2(-16f, 0f), new Vector2(8f, -2f));
+            Text timer = MakeText(canvasGo.transform, "Timer", 20, TextAnchor.UpperRight, FontStyle.Bold,
+                new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -26f), new Vector2(-16f, 0f), new Vector2(-8f, -2f));
+            Text view = MakeText(canvasGo.transform, "Views", 13, TextAnchor.LowerLeft, FontStyle.Normal,
+                new Vector2(0f, 0f), new Vector2(0.62f, 0f), new Vector2(0f, 22f), new Vector2(0f, 0f), new Vector2(10f, 2f));
+            Text info = MakeText(canvasGo.transform, "Checklist", 11, TextAnchor.UpperLeft, FontStyle.Normal,
+                new Vector2(0.6f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, Vector2.zero);
+            info.rectTransform.offsetMin = new Vector2(4f, 6f);
+            info.rectTransform.offsetMax = new Vector2(-6f, -32f);
+            info.verticalOverflow = VerticalWrapMode.Truncate;
+            info.supportRichText = true;
 
-            tablet.Configure(_nextItemId++, "Blueprint Tablet", new Vector3(0.3f, -0.33f, 0.5f), new Vector3(35f, -18f, 0f));
-            tablet.SetParts(_studio, screen.GetComponent<MeshRenderer>(), title, timer, view);
+            tablet.ConfigureGrip(new Vector3(0f, -th * 0.5f, 0f), new Vector3(0.28f, -0.36f, 0.55f), new Vector3(35f, -18f, 0f));
+            tablet.SetParts(teamArea, screen.GetComponent<MeshRenderer>(), title, timer, view, info);
         }
 
-        void BuildLadder(Vector3 pos, Quaternion rot, float length, float lean)
+        // ===================================================== ladder, barrow, bell
+
+        void BuildLadder(Transform area, Vector3 pos)
         {
-            var ladder = ItemRoot<Ladder>("Ladder", pos, rot, 15f, out Transform m);
-            Rigidbody rb = ladder.GetComponent<Rigidbody>();
-            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            float length = _settings.ladderLength;
+            // Lying flat on the ground along x (rails side by side, rungs level).
+            Quaternion rot = area.rotation * Quaternion.LookRotation(Vector3.up, Vector3.right);
+            var ladder = Item<Ladder>("Ladder", _root, area.TransformPoint(pos + Vector3.up * 0.05f), rot, 12f, out Transform m);
             // Only the rails collide (simple, stable contacts); rungs are visual.
             for (int s = -1; s <= 1; s += 2)
-                Prim(PrimitiveType.Cube, "Rail", m, new Vector3(s * 0.28f, length * 0.5f, 0f), new Vector3(0.07f, length, 0.07f), _yellow);
-            for (float h = 0.3f; h < length - 0.1f; h += 0.35f)
-                Prim(PrimitiveType.Cube, "Rung", m, new Vector3(0f, h, 0f), new Vector3(0.56f, 0.045f, 0.045f), _wood, false);
-            AddClimbZone(m, new Vector3(0f, length * 0.5f, -0.4f), new Vector3(0.75f, length, 0.6f), length, rb);
-            // Carried awkwardly: mostly horizontal, sticking out ahead, low on the right.
-            ladder.Configure(_nextItemId++, "Ladder", new Vector3(0.45f, -0.75f, 0.2f), new Vector3(72f, 6f, 0f));
-            ladder.SetDimensions(length, lean);
-        }
-
-        void AddClimbZone(Transform parent, Vector3 center, Vector3 size, float topY, Rigidbody body)
-        {
-            GameObject zoneGo = Node("ClimbZone", parent, Vector3.zero);
+                Box("Rail", m, new Vector3(s * 0.25f, length * 0.5f, 0f), new Vector3(0.06f, length, 0.06f), "yellow");
+            for (float h = 0.3f; h < length - 0.1f; h += 0.3f)
+                Box("Rung", m, new Vector3(0f, h, 0f), new Vector3(0.5f, 0.04f, 0.04f), "metal", false);
+            GameObject zoneGo = Node("ClimbZone", m, Vector3.zero);
             var box = zoneGo.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.center = center;
-            box.size = size;
-            zoneGo.AddComponent<ClimbZone>().Configure(topY, body);
+            box.center = new Vector3(0f, length * 0.5f, -0.4f);
+            box.size = new Vector3(0.75f, length, 0.6f);
+            var zone = zoneGo.AddComponent<ClimbZone>();
+            zone.Configure(length, ladder.GetComponent<Rigidbody>());
+            // Carried roughly level, ahead and low; grip a third of the way up.
+            ladder.ConfigureGrip(new Vector3(0f, length * 0.35f, 0f), new Vector3(0.35f, -0.55f, 0.9f), new Vector3(80f, 0f, 0f));
+            ladder.SetDimensions(length, _settings.ladderLean, zone);
         }
 
-        /// <summary>
-        /// Rolling scaffold tower (pivot = ground center): caster wheels, orange
-        /// frame with braces, plank deck at <paramref name="height"/>, guard rails
-        /// on three sides and a ladder on the open -Z side.
-        /// </summary>
-        void BuildScaffold(string name, Vector3 pos, float height)
+        void BuildWheelbarrow(Transform area, Vector3 pos)
         {
-            const float w = 2.4f;          // footprint
-            const float hw = w * 0.5f;
-            const float frameBottom = 0.3f; // wheels below this
-            const float bar = 0.07f;
-            float top = height + 1.05f;    // top guard rail
-
-            GameObject go = Node(name, _root, pos);
-            Transform t = go.transform;
-            var rb = go.AddComponent<Rigidbody>();
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
-
-            // Wheels (sphere colliders: caster stand-ins).
-            var wheels = new Collider[4];
-            int wi = 0;
-            for (int sx = -1; sx <= 1; sx += 2)
-            for (int sz = -1; sz <= 1; sz += 2)
-                wheels[wi++] = Prim(PrimitiveType.Sphere, "Wheel", t, new Vector3(sx * (hw - 0.1f), 0.15f, sz * (hw - 0.1f)),
-                    Vector3.one * 0.3f, _black).GetComponent<Collider>();
-
-            // Corner posts.
-            for (int sx = -1; sx <= 1; sx += 2)
-            for (int sz = -1; sz <= 1; sz += 2)
-                Prim(PrimitiveType.Cube, "Post", t, new Vector3(sx * hw, (frameBottom + top) * 0.5f, sz * hw),
-                    new Vector3(bar, top - frameBottom, bar), _orange);
-
-            // Horizontal rings every 2 m, plus X-side diagonals per level.
-            for (float y = frameBottom + 0.05f; y < height - 0.2f; y += 2f)
+            Quaternion rot = area.rotation * Quaternion.Euler(0f, 160f, 0f);
+            var barrow = Item<Wheelbarrow>("Wheelbarrow", _root, area.TransformPoint(pos), rot, 14f, out Transform m);
+            // Tray (local +z = toward the wheel), legs at the back, handles sticking out back.
+            Box("TrayBottom", m, new Vector3(0f, 0.42f, 0.1f), new Vector3(0.7f, 0.04f, 0.9f), "green");
+            Box("TrayFront", m, new Vector3(0f, 0.58f, 0.57f), new Vector3(0.7f, 0.32f, 0.04f), "green", true, new Vector3(-20f, 0f, 0f));
+            Box("TrayBack", m, new Vector3(0f, 0.56f, -0.36f), new Vector3(0.7f, 0.28f, 0.04f), "green");
+            for (int s = -1; s <= 1; s += 2)
             {
-                Ring(t, y, hw, bar, true);
-                float levelTop = Mathf.Min(y + 2f, height);
-                float rise = levelTop - y;
-                float diag = Mathf.Sqrt(rise * rise + w * w);
-                float angle = Mathf.Atan2(rise, w) * Mathf.Rad2Deg;
-                for (int sx = -1; sx <= 1; sx += 2)
-                    Prim(PrimitiveType.Cube, "Diagonal", t, new Vector3(sx * hw, y + rise * 0.5f, 0f),
-                        new Vector3(bar * 0.8f, bar * 0.8f, diag), _orange, true, new Vector3(-angle, 0f, 0f));
+                Box("TraySide", m, new Vector3(s * 0.36f, 0.57f, 0.1f), new Vector3(0.04f, 0.3f, 0.95f), "green");
+                Box("Handle", m, new Vector3(s * 0.28f, 0.42f, -0.65f), new Vector3(0.04f, 0.04f, 0.9f), "wood");
+                Box("Leg", m, new Vector3(s * 0.25f, 0.2f, -0.3f), new Vector3(0.04f, 0.4f, 0.04f), "black");
             }
+            Box("Axle", m, new Vector3(0f, 0.2f, 0.72f), new Vector3(0.3f, 0.03f, 0.03f), "black", false);
 
-            // Deck and guard rails (no rail on the ladder side, so you can step off).
-            Prim(PrimitiveType.Cube, "Deck", t, new Vector3(0f, height - 0.05f, 0f), new Vector3(w, 0.1f, w), _wood);
-            foreach (float y in new[] { height + 0.5f, top })
-            {
-                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(-hw, y, 0f), new Vector3(bar, bar, w), _orange);
-                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(hw, y, 0f), new Vector3(bar, bar, w), _orange);
-                Prim(PrimitiveType.Cube, "Rail", t, new Vector3(0f, y, hw), new Vector3(w, bar, bar), _orange);
-            }
-
-            // Built-in ladder on the -Z face, ending at deck height.
-            float ladderZ = -hw - 0.08f;
-            for (int sx = -1; sx <= 1; sx += 2)
-                Prim(PrimitiveType.Cube, "LadderRail", t, new Vector3(sx * 0.25f, (frameBottom + height) * 0.5f, ladderZ),
-                    new Vector3(0.05f, height - frameBottom, 0.05f), _yellow);
-            for (float y = frameBottom + 0.3f; y < height; y += 0.3f)
-                Prim(PrimitiveType.Cube, "LadderRung", t, new Vector3(0f, y, ladderZ), new Vector3(0.5f, 0.04f, 0.04f), _yellow, false);
-            AddClimbZone(t, new Vector3(0f, (frameBottom + height) * 0.5f + 0.15f, -hw - 0.45f),
-                new Vector3(0.9f, height - frameBottom + 0.3f, 0.7f), height + 0.15f, rb);
-
-            go.AddComponent<Scaffold>().Configure(wheels, 60f + 8f * height);
+            // The wheel: its own small rigidbody on a hinge.
+            GameObject wheel = Node("Wheel", _root, Vector3.zero);
+            wheel.transform.SetPositionAndRotation(barrow.transform.TransformPoint(new Vector3(0f, 0.2f, 0.72f)), rot);
+            var wrb = wheel.AddComponent<Rigidbody>();
+            wrb.mass = 2f;
+            wrb.interpolation = RigidbodyInterpolation.Interpolate;
+            var sphere = wheel.AddComponent<SphereCollider>();
+            sphere.radius = 0.2f;
+            Prim(PrimitiveType.Cylinder, "Tyre", wheel.transform, Vector3.zero, new Vector3(0.4f, 0.04f, 0.4f), "rubber", false,
+                new Vector3(0f, 0f, 90f));
+            var hinge = wheel.AddComponent<HingeJoint>();
+            hinge.connectedBody = barrow.GetComponent<Rigidbody>();
+            hinge.axis = Vector3.right;
+            hinge.anchor = Vector3.zero;
+            wheel.transform.SetParent(barrow.transform, true); // keeps it with the barrow in the hierarchy; still its own body
         }
 
-        /// <summary>Four horizontal bars around the tower at height y.</summary>
-        void Ring(Transform t, float y, float hw, float bar, bool withFront)
+        void BuildBell(Transform area, Vector3 pos)
         {
-            float w = hw * 2f;
-            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(-hw, y, 0f), new Vector3(bar, bar, w), _orange);
-            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(hw, y, 0f), new Vector3(bar, bar, w), _orange);
-            Prim(PrimitiveType.Cube, "Brace", t, new Vector3(0f, y, hw), new Vector3(w, bar, bar), _orange);
-            if (withFront) Prim(PrimitiveType.Cube, "Brace", t, new Vector3(0f, y, -hw), new Vector3(w, bar, bar), _orange);
+            var post = Item<Grabbable>("Inspection Bell", area, area.TransformPoint(pos), area.rotation, 45f, out Transform m);
+            Box("Base", m, new Vector3(0f, 0.05f, 0f), new Vector3(0.6f, 0.1f, 0.6f), "darkWood");
+            Box("Post", m, new Vector3(0f, 0.8f, 0f), new Vector3(0.1f, 1.5f, 0.1f), "darkWood");
+            Box("Arm", m, new Vector3(0.15f, 1.5f, 0f), new Vector3(0.35f, 0.06f, 0.06f), "darkWood");
+            GameObject bell = Prim(PrimitiveType.Sphere, "Bell", m, new Vector3(0.28f, 1.36f, 0f), new Vector3(0.22f, 0.24f, 0.22f), "yellow");
+            bell.AddComponent<InspectionBell>();
+            GameObject sign = Node("Sign", m, new Vector3(0f, 1.9f, 0f));
+            Text t = WorldText(sign, new Vector2(320f, 60f), 0.004f, 28, TextAnchor.MiddleCenter);
+            t.text = "<b>DONE? RING ME!</b>";
+            sign.AddComponent<WorldLabel>();
         }
 
         // =============================================================== player
 
-        Transform BuildPlayer()
+        Transform BuildPlayer(TeamArea area)
         {
+            Transform spawn = area.PlayerSpawn;
             GameObject go = Node("Player", _root, Vector3.zero);
-            go.transform.SetPositionAndRotation(_spawn.position, _spawn.rotation);
+            go.transform.SetPositionAndRotation(spawn.position, spawn.rotation);
             go.tag = "Player";
             var cc = go.AddComponent<CharacterController>();
             cc.height = 1.8f;
@@ -548,6 +678,8 @@ namespace SoapCarvers.Core
             cc.skinWidth = 0.04f;
 
             go.AddComponent<PlayerInputHandler>();
+            go.AddComponent<PlayerInventory>();
+            var grabber = go.AddComponent<PlayerGrabber>();
             go.AddComponent<PlayerMotor>();
             var look = go.AddComponent<PlayerLook>();
             _player = go.AddComponent<PlayerActions>();
@@ -563,10 +695,9 @@ namespace SoapCarvers.Core
             cam.clearFlags = CameraClearFlags.Skybox;
             camGo.AddComponent<AudioListener>();
             var shake = camGo.AddComponent<CameraShake>();
-            Transform hold = Node("HoldPoint", camGo.transform, Vector3.zero).transform;
 
             look.Configure(pivot, _settings.mouseSensitivity);
-            _player.Configure(1, camGo.transform, hold, shake, _items, _game);
+            grabber.Configure(1, area.TeamId, camGo.transform, shake);
             return go.transform;
         }
 
@@ -593,6 +724,7 @@ namespace SoapCarvers.Core
             t.horizontalOverflow = HorizontalWrapMode.Wrap;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.raycastTarget = false;
+            t.supportRichText = true;
             var outline = go.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.6f);
             outline.effectDistance = new Vector2(1.5f, -1.5f);
@@ -611,6 +743,18 @@ namespace SoapCarvers.Core
             return t;
         }
 
+        GameObject Panel(Transform parent, string name, Color color)
+        {
+            var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(parent, false);
+            var prt = (RectTransform)panel.transform;
+            prt.anchorMin = Vector2.zero;
+            prt.anchorMax = Vector2.one;
+            prt.offsetMin = prt.offsetMax = Vector2.zero;
+            panel.GetComponent<Image>().color = color;
+            return panel;
+        }
+
         Transform BuildHud()
         {
             GameObject canvasGo = Node("HUD", _root, Vector3.zero);
@@ -624,10 +768,8 @@ namespace SoapCarvers.Core
             canvasGo.AddComponent<GraphicRaycaster>();
             Transform c = canvasGo.transform;
             var hud = canvasGo.AddComponent<HudController>();
-            hud.game = _game;
             hud.player = _player;
 
-            // Crosshair
             var cross = new GameObject("Crosshair", typeof(RectTransform), typeof(Image));
             cross.transform.SetParent(c, false);
             var crt = (RectTransform)cross.transform;
@@ -638,32 +780,47 @@ namespace SoapCarvers.Core
             img.raycastTarget = false;
             hud.crosshair = cross;
 
-            hud.timerText = ScreenText(c, "Timer", 60, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(400f, 80f), FontStyle.Bold);
-            hud.statusText = ScreenText(c, "Status", 26, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(1400f, 90f));
-            hud.promptText = ScreenText(c, "Prompt", 30, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), new Vector2(0f, -90f), new Vector2(900f, 50f), FontStyle.Bold);
-            hud.heldText = ScreenText(c, "Held", 30, TextAnchor.LowerRight, new Vector2(1f, 0f), new Vector2(-30f, 60f), new Vector2(700f, 40f), FontStyle.Bold);
-            hud.heldHintText = ScreenText(c, "HeldHint", 20, TextAnchor.LowerRight, new Vector2(1f, 0f), new Vector2(-30f, 25f), new Vector2(900f, 30f));
-            hud.controlsText = ScreenText(c, "Controls", 18, TextAnchor.LowerLeft, new Vector2(0f, 0f), new Vector2(25f, 20f), new Vector2(700f, 140f));
+            Vector2 mid = new Vector2(0.5f, 0.5f);
+            hud.timerText = ScreenText(c, "Timer", 60, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -16f), new Vector2(400f, 76f), FontStyle.Bold);
+            hud.bannerText = ScreenText(c, "Banner", 32, TextAnchor.UpperCenter, new Vector2(0.5f, 1f), new Vector2(0f, -92f), new Vector2(1500f, 50f), FontStyle.Bold);
+            hud.bannerText.color = new Color(1f, 0.88f, 0.35f);
+            hud.stageText = ScreenText(c, "Stage", 22, TextAnchor.UpperLeft, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(700f, 60f));
+            hud.pocketText = ScreenText(c, "Pockets", 20, TextAnchor.UpperRight, new Vector2(1f, 1f), new Vector2(-24f, -20f), new Vector2(500f, 30f));
+            hud.lookText = ScreenText(c, "LookAt", 24, TextAnchor.LowerCenter, mid, new Vector2(0f, 30f), new Vector2(1100f, 34f));
+            hud.promptText = ScreenText(c, "Prompt", 28, TextAnchor.UpperCenter, mid, new Vector2(0f, -40f), new Vector2(1100f, 40f), FontStyle.Bold);
+            hud.toolStatusText = ScreenText(c, "ToolStatus", 24, TextAnchor.UpperCenter, mid, new Vector2(0f, -90f), new Vector2(1100f, 90f));
+            hud.toolStatusText.color = new Color(0.75f, 1f, 0.8f);
+            hud.heldText = ScreenText(c, "Held", 26, TextAnchor.LowerRight, new Vector2(1f, 0f), new Vector2(-30f, 60f), new Vector2(900f, 40f), FontStyle.Bold);
+            hud.heldHintText = ScreenText(c, "HeldHint", 20, TextAnchor.LowerRight, new Vector2(1f, 0f), new Vector2(-30f, 25f), new Vector2(1100f, 30f));
+            hud.controlsText = ScreenText(c, "Controls", 17, TextAnchor.LowerLeft, new Vector2(0f, 0f), new Vector2(25f, 20f), new Vector2(760f, 150f));
             hud.controlsText.text =
                 "WASD move  Shift sprint  Space jump\n" +
-                "E pick up / use  Q drop  G throw  LMB use tool\n" +
-                "RMB/Tab raise tablet  1-4 tablet views\n" +
-                "Ladder: walk into it + look up/down  Esc free mouse";
-            hud.controlsText.color = new Color(1f, 1f, 1f, 0.75f);
+                "E grab / release / use station  G throw  Scroll hold distance\n" +
+                "Hold R + mouse rotate held  LMB use tool\n" +
+                "RMB/Tab raise tablet  1-4 views  Esc free mouse\n" +
+                "Ladder: walk into it + look up/down";
+            hud.controlsText.color = new Color(1f, 1f, 1f, 0.7f);
+
+            // Briefing: the blueprint render plus kit info.
+            GameObject brief = Panel(c, "BriefingPanel", new Color(0.03f, 0.06f, 0.14f, 0.82f));
+            var rawGo = new GameObject("Blueprint", typeof(RectTransform), typeof(RawImage));
+            rawGo.transform.SetParent(brief.transform, false);
+            var rrt = (RectTransform)rawGo.transform;
+            rrt.anchorMin = rrt.anchorMax = rrt.pivot = new Vector2(0.27f, 0.5f);
+            rrt.sizeDelta = new Vector2(640f, 640f);
+            hud.briefingImage = rawGo.GetComponent<RawImage>();
+            hud.briefingImage.raycastTarget = false;
+            hud.briefingText = ScreenText(brief.transform, "BriefingText", 24, TextAnchor.MiddleLeft, new Vector2(0.52f, 0.5f), Vector2.zero,
+                new Vector2(860f, 700f));
+            hud.briefingPanel = brief;
+            brief.SetActive(false);
 
             // Results panel
-            var panel = new GameObject("ResultsPanel", typeof(RectTransform), typeof(Image));
-            panel.transform.SetParent(c, false);
-            var prt = (RectTransform)panel.transform;
-            prt.anchorMin = Vector2.zero;
-            prt.anchorMax = Vector2.one;
-            prt.offsetMin = prt.offsetMax = Vector2.zero;
-            panel.GetComponent<Image>().color = new Color(0.05f, 0.04f, 0.12f, 0.72f);
+            GameObject panel = Panel(c, "ResultsPanel", new Color(0.05f, 0.04f, 0.12f, 0.75f));
             Transform p = panel.transform;
-            Vector2 mid = new Vector2(0.5f, 0.5f);
             Text heading = ScreenText(p, "Heading", 34, TextAnchor.MiddleCenter, mid, new Vector2(0f, 250f), new Vector2(1200f, 50f));
-            heading.text = "SCAN COMPLETE - YOUR RANK:";
-            hud.rankText = ScreenText(p, "Rank", 84, TextAnchor.MiddleCenter, mid, new Vector2(0f, 160f), new Vector2(1600f, 110f), FontStyle.Bold);
+            heading.text = "INSPECTION COMPLETE - YOUR CREW IS:";
+            hud.rankText = ScreenText(p, "Rank", 80, TextAnchor.MiddleCenter, mid, new Vector2(0f, 160f), new Vector2(1700f, 110f), FontStyle.Bold);
             hud.rankText.color = new Color(1f, 0.85f, 0.35f);
             hud.scoreText = ScreenText(p, "Score", 56, TextAnchor.MiddleCenter, mid, new Vector2(0f, 50f), new Vector2(1200f, 80f), FontStyle.Bold);
             hud.detailsText = ScreenText(p, "Details", 28, TextAnchor.UpperCenter, mid, new Vector2(0f, -10f), new Vector2(1200f, 140f));
@@ -672,11 +829,11 @@ namespace SoapCarvers.Core
             btnGo.transform.SetParent(p, false);
             var brt = (RectTransform)btnGo.transform;
             brt.anchorMin = brt.anchorMax = brt.pivot = mid;
-            brt.sizeDelta = new Vector2(420f, 80f);
+            brt.sizeDelta = new Vector2(460f, 80f);
             brt.anchoredPosition = new Vector2(0f, -220f);
-            btnGo.GetComponent<Image>().color = new Color(1f, 0.55f, 0.75f);
-            Text btnText = ScreenText(btnGo.transform, "Label", 34, TextAnchor.MiddleCenter, mid, Vector2.zero, new Vector2(420f, 80f), FontStyle.Bold);
-            btnText.text = "Carve again  (R)";
+            btnGo.GetComponent<Image>().color = new Color(1f, 0.6f, 0.2f);
+            Text btnText = ScreenText(btnGo.transform, "Label", 32, TextAnchor.MiddleCenter, mid, Vector2.zero, new Vector2(460f, 80f), FontStyle.Bold);
+            btnText.text = "New pile, build again  (R)";
             hud.restartButton = btnGo.GetComponent<Button>();
             hud.resultsPanel = panel;
             panel.SetActive(false);

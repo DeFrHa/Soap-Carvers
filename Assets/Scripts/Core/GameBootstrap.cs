@@ -1,18 +1,19 @@
 using UnityEngine;
 
-namespace SoapCarvers.Core
+namespace BuildCrew.Core
 {
     /// <summary>
     /// Drop this on an empty GameObject in any (empty) scene and press Play:
     /// it builds the whole game at runtime with the same SceneBuilder the editor
     /// menu uses. Does nothing if a GameManager already exists (e.g. in the
-    /// generated SoapCarvers.unity scene).
+    /// generated BuildCrew.unity scene).
     /// </summary>
     [DefaultExecutionOrder(-1000)]
     public class GameBootstrap : MonoBehaviour
     {
         [Tooltip("Remove any cameras/lights already in the scene (e.g. the default Main Camera) before building.")]
         [SerializeField] bool removeExistingCamerasAndLights = true;
+        [SerializeField] KitChoice kit = KitChoice.GardenShed;
 
         void Awake()
         {
@@ -28,7 +29,7 @@ namespace SoapCarvers.Core
                 foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None)) Destroy(l.gameObject);
             }
 
-            new SceneBuilder().Build();
+            new SceneBuilder(null, kit).Build();
             Destroy(gameObject);
         }
     }

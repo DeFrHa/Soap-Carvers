@@ -1,28 +1,31 @@
 using System.Collections.Generic;
 using System.IO;
-using SoapCarvers.Core;
+using BuildCrew.Core;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace SoapCarvers.EditorTools
+namespace BuildCrew.EditorTools
 {
     /// <summary>
-    /// Menu: Soap Carvers/Create Playable Scene.
-    /// Creates the "Hologram" layer, builds the scene with SceneBuilder, saves
-    /// generated materials to Assets/Materials and settings to
-    /// Assets/Settings/GameSettings.asset (kept if it already exists, so your
-    /// tuning survives a rebuild), saves Assets/Scenes/SoapCarvers.unity and
-    /// adds it to the build settings.
+    /// Menu: Build Crew/Create Playable Scene.
+    /// Creates the "Hologram" layer, writes the kit JSONs if they are missing,
+    /// builds the scene with SceneBuilder, saves generated materials to
+    /// Assets/Materials and settings to Assets/Settings/GameSettings.asset
+    /// (kept if it already exists, so your tuning survives a rebuild), saves
+    /// Assets/Scenes/BuildCrew.unity and adds it to the build settings.
+    /// Pick the kit afterwards on the GameManager (dropdown).
     /// </summary>
-    public static class SoapCarversSceneMenu
+    public static class BuildCrewSceneMenu
     {
-        const string ScenePath = "Assets/Scenes/SoapCarvers.unity";
+        const string ScenePath = "Assets/Scenes/BuildCrew.unity";
 
-        [MenuItem("Soap Carvers/Create Playable Scene")]
+        [MenuItem("Build Crew/Create Playable Scene", priority = 0)]
         public static void CreatePlayableScene()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+
+            KitGenerator.WriteKits(false);
 
             EnsureLayer(Layers.HologramName, Layers.HologramFallback);
             EnsureFolder("Assets/Scenes");
@@ -30,20 +33,20 @@ namespace SoapCarvers.EditorTools
             EnsureFolder("Assets/Settings");
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            new SceneBuilder(PersistAsset).Build();
+            new SceneBuilder(PersistAsset, KitChoice.GardenShed).Build();
 
             AssetDatabase.SaveAssets();
             if (!EditorSceneManager.SaveScene(scene, ScenePath))
             {
-                Debug.LogError($"[Soap Carvers] Failed to save {ScenePath}");
+                Debug.LogError($"[Build Crew] Failed to save {ScenePath}");
                 return;
             }
             AddSceneToBuildSettings(ScenePath);
             AssetDatabase.Refresh();
-            Debug.Log($"[Soap Carvers] Created {ScenePath}. Press Play!");
+            Debug.Log($"[Build Crew] Created {ScenePath}. Press Play! (Kit: GameManager > Kit)");
         }
 
-        [MenuItem("Soap Carvers/Open Playable Scene")]
+        [MenuItem("Build Crew/Open Playable Scene", priority = 1)]
         public static void OpenPlayableScene()
         {
             if (!File.Exists(ScenePath))
@@ -96,7 +99,7 @@ namespace SoapCarvers.EditorTools
             Object[] assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
             if (assets == null || assets.Length == 0)
             {
-                Debug.LogWarning("[Soap Carvers] Could not open TagManager; add a layer named 'Hologram' manually (see SETUP.md).");
+                Debug.LogWarning("[Build Crew] Could not open TagManager; add a layer named 'Hologram' manually (see SETUP.md).");
                 return;
             }
             var tagManager = new SerializedObject(assets[0]);
@@ -115,10 +118,10 @@ namespace SoapCarvers.EditorTools
                 if (!string.IsNullOrEmpty(p.stringValue)) continue;
                 p.stringValue = layerName;
                 tagManager.ApplyModifiedProperties();
-                Debug.Log($"[Soap Carvers] Added layer '{layerName}' at index {i}.");
+                Debug.Log($"[Build Crew] Added layer '{layerName}' at index {i}.");
                 return;
             }
-            Debug.LogWarning($"[Soap Carvers] No free layer slot for '{layerName}'.");
+            Debug.LogWarning($"[Build Crew] No free layer slot for '{layerName}'.");
         }
 
         static void AddSceneToBuildSettings(string path)

@@ -1,4 +1,4 @@
-// Minimal stub of the Input System API used by Soap Carvers. Compile-check only; NOT shipped.
+// Minimal stub of the Input System API used by Build Crew. Compile-check only; NOT shipped.
 // (.txt extension so Unity never compiles it inside the real project.)
 // Minimal stub of the Input System API surface used by the project (compile check only).
 namespace UnityEngine.InputSystem
