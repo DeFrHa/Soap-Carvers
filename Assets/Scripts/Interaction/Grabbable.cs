@@ -17,6 +17,8 @@ namespace BuildCrew.Interaction
     /// lag and sag, heavy things (weight > strength) can only be dragged, and
     /// several grabbers simply add their forces.
     ///
+    /// Exception: grip items (tools) are held rigidly, see <see cref="HeldRigidly"/>.
+    ///
     /// Only <see cref="GrabManager"/> attaches/detaches grabbers (via commands).
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
@@ -37,7 +39,7 @@ namespace BuildCrew.Interaction
         struct Link
         {
             public IGrabber Grabber;
-            public ConfigurableJoint Joint;
+            public ConfigurableJoint Joint; // null when held rigidly
         }
 
         readonly List<Link> _links = new List<Link>(2);
@@ -50,6 +52,14 @@ namespace BuildCrew.Interaction
         public Collider[] Colliders { get; private set; }
         /// <summary>Grabbed at the grip and held in a pose (tools). Decided at grab time.</summary>
         public virtual bool UsesGrip => useGrip;
+
+        /// <summary>
+        /// Grip items are held RIGIDLY: kinematic, colliders off, locked to the
+        /// hold pose in front of the camera (PlayerGrabber.LateUpdate), so tools
+        /// are steady in the hand. Back to a normal dynamic body on release.
+        /// Override to false for big grip items that should stay physical (ladder).
+        /// </summary>
+        public virtual bool HeldRigidly => UsesGrip;
         public Vector3 GripLocal => gripLocal;
         public bool SpawnedAtRuntime => spawnedAtRuntime;
         public int GrabberCount => _links.Count;
@@ -95,7 +105,7 @@ namespace BuildCrew.Interaction
         /// <summary>Only the EntityRegistry calls this (id collisions / runtime spawns).</summary>
         public void AssignId(int id) => entityId = id;
 
-        /// <summary>Hold pose relative to the camera. Tools override to animate (swings, raised tablet).</summary>
+        /// <summary>Hold pose relative to the camera. Tools override to animate (swings, sawing strokes).</summary>
         public virtual void GetHoldPose(out Vector3 localPosition, out Quaternion localRotation)
         {
             localPosition = holdPosition;
@@ -129,6 +139,12 @@ namespace BuildCrew.Interaction
             Colliders = list.ToArray();
         }
 
+        void SetCollidersEnabled(bool enabled)
+        {
+            foreach (Collider c in Colliders)
+                if (c != null) c.enabled = enabled;
+        }
+
         public bool IsGrabbedBy(IGrabber grabber)
         {
             foreach (Link l in _links)
@@ -136,9 +152,18 @@ namespace BuildCrew.Interaction
             return false;
         }
 
-        /// <summary>Creates the grab joint. Called by GrabManager after the hand was moved to the grab point.</summary>
+        /// <summary>Creates the grab joint (or the rigid hold). Called by GrabManager after the hand was moved to the grab point.</summary>
         public void AttachGrabber(IGrabber grabber, Vector3 localPoint, GameSettings s)
         {
+            if (HeldRigidly)
+            {
+                Body.isKinematic = true;
+                Body.interpolation = RigidbodyInterpolation.None; // the transform is driven every frame
+                SetCollidersEnabled(false);
+                _links.Add(new Link { Grabber = grabber, Joint = null });
+                return;
+            }
+
             var joint = gameObject.AddComponent<ConfigurableJoint>();
             joint.autoConfigureConnectedAnchor = false;
             joint.connectedBody = grabber.Hand;
@@ -177,6 +202,15 @@ namespace BuildCrew.Interaction
             {
                 if (_links[i].Grabber != grabber) continue;
                 if (_links[i].Joint != null) Destroy(_links[i].Joint);
+                else
+                {
+                    // Rigid hold ends: a normal dynamic body again, moving with the player.
+                    SetCollidersEnabled(true);
+                    Body.isKinematic = false;
+                    Body.interpolation = RigidbodyInterpolation.Interpolate;
+                    Body.linearVelocity = grabber.Velocity;
+                    Body.angularVelocity = Vector3.zero;
+                }
                 _links.RemoveAt(i);
                 Body.WakeUp();
                 return true;
@@ -214,6 +248,11 @@ namespace BuildCrew.Interaction
         public virtual void ResetToHome()
         {
             gameObject.SetActive(true);
+            if (Body.isKinematic && _links.Count == 0)
+            {
+                Body.isKinematic = false;
+                SetCollidersEnabled(true);
+            }
             PlaceAt(_homePosition, _homeRotation);
         }
     }

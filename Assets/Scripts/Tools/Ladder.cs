@@ -30,6 +30,8 @@ namespace BuildCrew.Tools
         /// <summary>Standing up: grab it where you touch it (to steady it), not by the carry grip.</summary>
         public bool IsUpright => Vector3.Dot(transform.up, Vector3.up) > 0.6f;
         public override bool UsesGrip => base.UsesGrip && !IsUpright;
+        /// <summary>A 6 m ladder stays physical while carried (it bumps into things).</summary>
+        public override bool HeldRigidly => false;
         public override bool WorksOutsideBuild => true;
         public override string LookInfo => $"Ladder {length:0.#} m  ({Body.mass:0} kg)";
         public override string HeldHint => IsUpright && !UsesGripNow

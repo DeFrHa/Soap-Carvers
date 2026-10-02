@@ -34,6 +34,8 @@ namespace BuildCrew.Player
         Quaternion _gripRelativeAtGrab = Quaternion.identity;
         int _stepsSinceGrab;
         bool _gripMode;
+        bool _rigid;
+        float _rigidBlend;
         float _leashTimer;
 
         // --- IGrabber ---
@@ -104,6 +106,8 @@ namespace BuildCrew.Player
             Grabbed = target;
             GrabLocalPoint = localPoint;
             _gripMode = target.UsesGrip;
+            _rigid = target.HeldRigidly;
+            _rigidBlend = 0f;
             _userRotation = Quaternion.identity;
             _gripOffset = Quaternion.identity;
             _gripRelativeAtGrab = Quaternion.Inverse(aim.rotation) * target.transform.rotation;
@@ -111,13 +115,15 @@ namespace BuildCrew.Player
             _leashTimer = 0f;
             HoldDistance = Mathf.Clamp(Vector3.Distance(aim.position, target.transform.TransformPoint(localPoint)),
                 _settings.holdDistanceMin, _settings.holdDistanceMax);
-            SetIgnoreCollisions(target, true);
+            // Rigidly held tools have their colliders off (IgnoreCollision needs enabled colliders).
+            if (!_rigid) SetIgnoreCollisions(target, true);
         }
 
         public void OnReleased()
         {
-            if (Grabbed != null) SetIgnoreCollisions(Grabbed, false);
+            if (Grabbed != null && !_rigid) SetIgnoreCollisions(Grabbed, false);
             Grabbed = null;
+            _rigid = false;
             _leashTimer = 0f;
         }
 
@@ -159,11 +165,34 @@ namespace BuildCrew.Player
             }
         }
 
+        /// <summary>
+        /// Rigidly held tools follow the camera exactly, after it moved this
+        /// frame, so they are rock steady. They swoop in from where they were
+        /// over the first ~0.15 s.
+        /// </summary>
+        void LateUpdate()
+        {
+            if (!_rigid || Grabbed == null || aim == null) return;
+            Grabbed.GetHoldPose(out Vector3 lp, out Quaternion lr);
+            Quaternion rot = aim.rotation * lr;
+            Vector3 pos = aim.TransformPoint(lp) - rot * GrabLocalPoint;
+            Transform t = Grabbed.transform;
+            if (_rigidBlend < 1f)
+            {
+                _rigidBlend = Mathf.Min(1f, _rigidBlend + Time.deltaTime / 0.15f);
+                float k = 1f - Mathf.Exp(-25f * Time.deltaTime);
+                pos = _rigidBlend >= 1f ? pos : Vector3.Lerp(t.position, pos, k);
+                rot = _rigidBlend >= 1f ? rot : Quaternion.Slerp(t.rotation, rot, k);
+            }
+            t.SetPositionAndRotation(pos, rot);
+        }
+
         void FixedUpdate()
         {
-            if (Grabbed == null || aim == null)
+            if (Grabbed == null || aim == null || _rigid)
             {
                 _handPos = aim != null ? aim.position : transform.position;
+                _leashTimer = 0f;
                 return;
             }
 
